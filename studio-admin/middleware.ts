@@ -19,6 +19,17 @@ function getToken(req: NextRequest) {
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = getToken(req);
+
+  // Redirect logged-in users from login page to dashboard
+  if (pathname === "/login" && token) {
+    try {
+      verifyToken(token);
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    } catch (error) {
+      // Invalid token, allow login page
+    }
+  }
 
   // Allow public paths (only login and assets)
   if (isPublicPath(pathname)) {
@@ -40,7 +51,6 @@ export function middleware(req: NextRequest) {
   }
 
   // Protect admin pages
-  const token = getToken(req);
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

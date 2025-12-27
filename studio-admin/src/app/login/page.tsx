@@ -30,15 +30,8 @@ export default function LoginPage() {
         return;
       }
 
-      const data = await res.json();
-      console.log("Login successful:", data);
-
-      // Wait a moment then redirect
-      setTimeout(() => {
-        console.log("Redirecting to dashboard...");
-        router.push("/dashboard");
-        router.refresh();
-      }, 300);
+      // Redirect immediately after successful login
+      window.location.href = "/dashboard";
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message || "Login failed");
