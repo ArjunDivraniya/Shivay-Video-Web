@@ -17,6 +17,7 @@ const links = [
   { href: "/media", label: "Gallery", icon: "🖼️" },
   { href: "/reels", label: "Reels", icon: "🎞️" },
   { href: "/testimonials", label: "Testimonials", icon: "💬" },
+  { href: "/footer", label: "Footer", icon: "🔗" },
   { href: "/sections", label: "Section Control", icon: "🗂️" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
