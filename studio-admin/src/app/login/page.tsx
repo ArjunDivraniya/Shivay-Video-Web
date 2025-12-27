@@ -30,8 +30,15 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirect immediately after successful login
-      window.location.href = "/dashboard";
+      const data = await res.json();
+      
+      if (data.success) {
+        // Add small delay to ensure cookie is set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use window.location for reliable redirect on deployment
+        window.location.href = "/dashboard";
+      }
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message || "Login failed");
