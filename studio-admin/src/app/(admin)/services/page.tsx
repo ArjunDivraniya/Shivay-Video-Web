@@ -111,8 +111,7 @@ export default function ServicesPage() {
           imagePublicId,
           isActive,
         }),
-      });CustomServiceType("");
-      set
+      });
 
       if (!res.ok) {
         throw new Error("Failed to create service");
@@ -121,6 +120,7 @@ export default function ServicesPage() {
       setMessage("✓ Service created successfully!");
       setServiceName("");
       setServiceType("Wedding");
+      setCustomServiceType("");
       setImageUrl("");
       setImagePublicId("");
       setIsActive(true);
