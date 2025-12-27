@@ -22,15 +22,16 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
-    if (!body.title || !body.videoUrl || !body.videoPublicId) {
+    if (!body.title || !body.category || !body.videoUrl || !body.videoPublicId) {
       return NextResponse.json(
-        { error: "title, videoUrl, and videoPublicId are required" },
+        { error: "title, category, videoUrl, and videoPublicId are required" },
         { status: 400 }
       );
     }
 
     const film = await Film.create({
       title: body.title,
+      category: body.category,
       videoUrl: body.videoUrl,
       videoPublicId: body.videoPublicId,
     });

@@ -2,6 +2,7 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IFilm extends Document {
   title: string;
+  category: string;
   videoUrl: string;
   videoPublicId: string;
   createdAt: Date;
@@ -10,6 +11,7 @@ export interface IFilm extends Document {
 const FilmSchema = new Schema<IFilm>(
   {
     title: { type: String, required: true },
+    category: { type: String, required: true },
     videoUrl: { type: String, required: true },
     videoPublicId: { type: String, required: true },
   },

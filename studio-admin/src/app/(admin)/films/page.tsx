@@ -5,10 +5,13 @@ import { useEffect, useRef, useState } from "react";
 interface Film {
   _id: string;
   title: string;
+  category: string;
   videoUrl: string;
   videoPublicId: string;
   createdAt: string;
 }
+
+const FILM_CATEGORIES = ["Wedding Film", "Cinematic", "Promo", "Event", "Other"];
 
 export default function FilmsPage() {
   const [films, setFilms] = useState<Film[]>([]);
@@ -16,10 +19,12 @@ export default function FilmsPage() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("Wedding Film");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoPublicId, setVideoPublicId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +83,7 @@ export default function FilmsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !videoUrl || !videoPublicId) {
+    if (!title.trim() || !category || !videoUrl || !videoPublicId) {
       setMessage("✗ Please fill in all fields and upload a video");
       return;
     }
@@ -92,6 +97,7 @@ export default function FilmsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
+          category,
           videoUrl,
           videoPublicId,
         }),
@@ -103,6 +109,7 @@ export default function FilmsPage() {
 
       setMessage("✓ Film uploaded successfully!");
       setTitle("");
+      setCategory("Wedding Film");
       setVideoUrl("");
       setVideoPublicId("");
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -164,21 +171,25 @@ export default function FilmsPage() {
       const res = await fetch(`/api/films/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle }),
+        body: JSON.stringify({ 
+          title: editTitle,
+          category: editCategory 
+        }),
       });
 
       if (!res.ok) throw new Error("Update failed");
 
       setFilms(
         films.map((f) =>
-          f._id === id ? { ...f, title: editTitle } : f
+          f._id === id ? { ...f, title: editTitle, category: editCategory } : f
         )
       );
       setEditingId(null);
       setEditTitle("");
-      setMessage("✓ Film title updated");
+      setEditCategory("");
+      setMessage("✓ Film updated");
     } catch (error) {
-      setMessage("✗ Failed to update title");
+      setMessage("✗ Failed to update film");
     }
   };
 
@@ -196,16 +207,34 @@ export default function FilmsPage() {
       <form onSubmit={handleSubmit} className="card p-6 space-y-6 fade-in">
         <h2 className="text-lg font-semibold">Upload New Film</h2>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Film Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="input"
-            placeholder="e.g., Bride & Groom Wedding Cinematic"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Film Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="input"
+              placeholder="e.g., Priya & Rahul's Wedding Film"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Film Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+              className="input"
+            >
+              {FILM_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Video Upload */}
@@ -264,7 +293,7 @@ export default function FilmsPage() {
         </button>
       </form>
 
-      {/* Films List */}
+      {/* Films Grid */}
       <div className="card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Films ({films.length})</h2>
@@ -275,83 +304,112 @@ export default function FilmsPage() {
         ) : films.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No films yet. Upload your first film!</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {films.map((film) => (
               <div
                 key={film._id}
-                className="border border-[var(--border)] rounded-xl p-4 hover:shadow-lg transition-shadow"
+                className="group relative rounded-xl overflow-hidden border border-[var(--border)] hover:shadow-xl transition-all duration-300"
               >
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Video Preview */}
-                  <div className="w-full sm:w-48 h-28 bg-[var(--border)] rounded-lg overflow-hidden flex-shrink-0">
-                    <video
-                      src={film.videoUrl}
-                      className="w-full h-full object-cover"
-                      controls={false}
-                    />
-                  </div>
-
-                  {/* Film Details */}
-                  <div className="flex-1 space-y-3">
-                    {editingId === film._id ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="input flex-1"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleUpdateTitle(film._id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-400"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <h3 className="font-semibold text-[var(--foreground)]">{film.title}</h3>
-                        <p className="text-xs text-[var(--muted)]">
-                          {new Date(film.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                      {editingId !== film._id && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setEditingId(film._id);
-                              setEditTitle(film.title);
-                            }}
-                            className="flex-1 text-xs text-blue-600 hover:bg-blue-50 py-2 rounded-lg transition-colors"
-                          >
-                            Edit Title
-                          </button>
-                          <button
-                            onClick={() => handleDelete(film._id)}
-                            className="flex-1 text-xs text-red-600 hover:bg-red-50 py-2 rounded-lg transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
+                {/* Video Container */}
+                <div className="relative aspect-video bg-black overflow-hidden">
+                  <video
+                    src={film.videoUrl}
+                    className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-300"
+                  />
+                  {/* Play Button Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full border-3 border-white/50 flex items-center justify-center group-hover:border-white group-hover:bg-white/10 transition-all duration-300">
+                      <span className="text-white text-2xl ml-1">▶</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Film Info Overlay */}
+                <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300 p-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">
+                      {film.category}
+                    </p>
+                    <h3 className="text-lg font-serif text-white font-semibold leading-tight">
+                      {film.title}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Action Buttons (Edit/Delete) */}
+                {editingId !== film._id && (
+                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={() => {
+                        setEditingId(film._id);
+                        setEditTitle(film.title);
+                        setEditCategory(film.category);
+                      }}
+                      className="p-2 bg-blue-600/90 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDelete(film._id)}
+                      className="p-2 bg-red-600/90 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingId && (
+        <div className="card p-6 space-y-4 border-2 border-blue-500">
+          <h3 className="text-lg font-semibold">Edit Film</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="input"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="input"
+              >
+                {FILM_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleUpdateTitle(editingId)}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={() => setEditingId(null)}
+              className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
