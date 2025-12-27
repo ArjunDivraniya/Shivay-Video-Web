@@ -1,29 +1,37 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { loginSchema } from "@/lib/validators";
-import dbConnect from "@/lib/mongodb";
-import Admin from "@/models/Admin";
 import { signToken } from "@/lib/jwt";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const parsed = loginSchema.parse(body);
+    const { email, password } = body;
 
-    await dbConnect();
-    const admin = await Admin.findOne({ email: parsed.email });
-    if (!admin) {
+    // Validate against environment variables only
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    // Check credentials match exactly with .env file
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const isValid = await bcrypt.compare(parsed.password, admin.password);
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-    }
+    // Generate token for valid admin
+    const token = signToken({ 
+      sub: "admin", 
+      email: ADMIN_EMAIL, 
+      role: "admin" 
+    });
 
-    const token = signToken({ sub: admin._id.toString(), email: admin.email, role: admin.role });
-
-    const response = NextResponse.json({ email: admin.email, role: admin.role, success: true });
+    const response = NextResponse.json({ 
+      email: ADMIN_EMAIL, 
+      role: "admin", 
+      success: true 
+    });
+    
     response.cookies.set("admin_token", token, {
       httpOnly: true,
       secure: false,

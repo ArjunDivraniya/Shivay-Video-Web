@@ -9,22 +9,8 @@ const PUBLIC_PATHS = [
   "/favicon",
 ];
 
-const PUBLIC_API_GET = [
-  "/api/stories",
-  "/api/stories/featured",
-  "/api/media",
-  "/api/reels",
-  "/api/sections",
-  "/api/testimonials",
-];
-
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-}
-
-function isPublicApi(req: NextRequest) {
-  if (req.method !== "GET") return false;
-  return PUBLIC_API_GET.some((path) => req.nextUrl.pathname.startsWith(path));
 }
 
 function getToken(req: NextRequest) {
@@ -34,15 +20,13 @@ function getToken(req: NextRequest) {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow public paths
+  // Allow public paths (only login and assets)
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Allow public API GET endpoints
+  // All API routes require authentication
   if (pathname.startsWith("/api")) {
-    if (isPublicApi(req)) return NextResponse.next();
-
     const token = getToken(req);
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

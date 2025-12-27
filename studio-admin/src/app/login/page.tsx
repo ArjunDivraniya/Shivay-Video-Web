@@ -87,7 +87,7 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
-        <p className="text-xs text-[var(--muted)] text-center mt-4">Demo: admin@shivay.com / 123456</p>
+        
       </div>
     </div>
   );
