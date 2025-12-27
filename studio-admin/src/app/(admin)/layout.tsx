@@ -1,4 +1,5 @@
 import Sidebar from "@/components/Sidebar";
+import PWAInstall from "@/components/PWAInstall";
 import type { ReactNode } from "react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -8,6 +9,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 px-4 sm:px-8 py-8 pb-28 md:pb-8 max-w-6xl mx-auto w-full fade-in">
         {children}
       </main>
+      <PWAInstall />
     </div>
   );
 }
