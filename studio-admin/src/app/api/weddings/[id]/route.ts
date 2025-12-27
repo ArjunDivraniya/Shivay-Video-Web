@@ -5,11 +5,11 @@ import WeddingStory from "@/models/WeddingStory";
 // GET: Single wedding
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const wedding = await WeddingStory.findById(id);
 
@@ -27,12 +27,12 @@ export async function GET(
 // PUT: Update wedding
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     const updateData: any = {};
     if (body.title) updateData.title = body.title;
@@ -61,11 +61,11 @@ export async function PUT(
 // DELETE: Delete wedding
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const wedding = await WeddingStory.findByIdAndDelete(id);
 

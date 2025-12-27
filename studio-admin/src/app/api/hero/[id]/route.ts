@@ -5,12 +5,12 @@ import Hero from "@/models/Hero";
 // PUT: Replace hero image
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     if (!body.imageUrl || !body.imagePublicId) {
       return NextResponse.json(
@@ -39,11 +39,11 @@ export async function PUT(
 // DELETE: Delete hero image
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const hero = await Hero.findByIdAndDelete(id);
 

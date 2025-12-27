@@ -5,12 +5,12 @@ import Service from "@/models/Service";
 // PUT: Update service
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     const updateData: any = {};
     if (body.serviceName) updateData.serviceName = body.serviceName;
@@ -39,11 +39,11 @@ export async function PUT(
 // DELETE: Delete service
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const service = await Service.findByIdAndDelete(id);
 

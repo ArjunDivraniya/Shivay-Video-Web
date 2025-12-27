@@ -5,12 +5,12 @@ import OurStory from "@/models/OurStory";
 // PUT: Update image/year
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     const updateData: any = {};
     if (body.imageUrl) updateData.imageUrl = body.imageUrl;
@@ -38,11 +38,11 @@ export async function PUT(
 // DELETE: Delete our story
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const ourStory = await OurStory.findByIdAndDelete(id);
 
