@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: "🏠" },
@@ -22,6 +22,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by waiting for client mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -43,7 +49,7 @@ export default function Sidebar() {
           <div className="text-sm text-[var(--muted)]">Premium Studio CMS</div>
         </div>
         <nav className="flex-1 px-4 overflow-y-auto overflow-x-hidden no-scrollbar relative z-10 space-y-1">
-          {links.map((link) => {
+          {mounted && links.map((link) => {
             const active = pathname?.startsWith(link.href);
             return (
               <Link
@@ -88,7 +94,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      <MobileTabBar pathname={pathname} onLogout={handleLogout} loggingOut={loggingOut} />
+      {mounted && <MobileTabBar pathname={pathname} onLogout={handleLogout} loggingOut={loggingOut} />}
     </>
   );
 }
