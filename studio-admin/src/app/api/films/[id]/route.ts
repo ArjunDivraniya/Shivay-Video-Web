@@ -15,6 +15,7 @@ export async function PUT(
     const updateData: any = {};
     if (body.title) updateData.title = body.title;
     if (body.category) updateData.category = body.category;
+    if (body.serviceType !== undefined) updateData.serviceType = body.serviceType;
 
     const film = await Film.findByIdAndUpdate(
       id,

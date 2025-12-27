@@ -7,6 +7,7 @@ interface Wedding {
   title: string;
   coupleName: string;
   place: string;
+  serviceType: string;
   coverPhoto: {
     url: string;
     publicId: string;
@@ -15,14 +16,18 @@ interface Wedding {
   createdAt: string;
 }
 
+const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
+
 export default function WeddingsPage() {
   const [weddings, setWeddings] = useState<Wedding[]>([]);
+  const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [coupleName, setCoupleName] = useState("");
   const [place, setPlace] = useState("");
+  const [serviceType, setServiceType] = useState("");
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
   const [coverPhotoId, setCoverPhotoId] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
@@ -32,7 +37,18 @@ export default function WeddingsPage() {
 
   useEffect(() => {
     loadWeddings();
+    loadServices();
   }, []);
+
+  const loadServices = async () => {
+    try {
+      const res = await fetch("/api/services");
+      const data = await res.json();
+      setServices(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load services:", error);
+    }
+  };
 
   const loadWeddings = async () => {
     setLoading(true);
@@ -115,7 +131,7 @@ export default function WeddingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !coupleName.trim() || !place.trim() || !coverPhotoUrl || !coverPhotoId) {
+    if (!title.trim() || !coupleName.trim() || !place.trim() || !serviceType.trim() || !coverPhotoUrl || !coverPhotoId) {
       setMessage("✗ Please fill in all fields and upload a cover photo");
       return;
     }
@@ -131,6 +147,7 @@ export default function WeddingsPage() {
           title,
           coupleName,
           place,
+          serviceType,
           coverPhoto: {
             url: coverPhotoUrl,
             publicId: coverPhotoId,
@@ -147,6 +164,7 @@ export default function WeddingsPage() {
       setTitle("");
       setCoupleName("");
       setPlace("");
+      setServiceType("");
       setCoverPhotoUrl("");
       setCoverPhotoId("");
       setGalleryUrls([]);
@@ -250,6 +268,28 @@ export default function WeddingsPage() {
               placeholder="Mumbai, India"
             />
           </div>
+        </div>
+
+        {/* Service Type */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Service Type</label>
+          <select
+            value={serviceType}
+            onChange={(e) => setServiceType(e.target.value)}
+            required
+            className="input"
+          >
+            <option value="">Select service type</option>
+            {Array.from(new Set([
+              ...SERVICE_TYPES,
+              ...services.map(s => s.serviceType)
+            ])).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500">Select the service type for this wedding</p>
         </div>
 
         {/* Cover Photo */}

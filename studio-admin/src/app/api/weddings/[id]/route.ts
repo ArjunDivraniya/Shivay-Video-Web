@@ -38,6 +38,7 @@ export async function PUT(
     if (body.title) updateData.title = body.title;
     if (body.coupleName) updateData.coupleName = body.coupleName;
     if (body.place) updateData.place = body.place;
+    if (body.serviceType) updateData.serviceType = body.serviceType;
     if (body.coverPhoto) updateData.coverPhoto = body.coverPhoto;
     if (body.gallery !== undefined) updateData.gallery = body.gallery;
 

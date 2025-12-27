@@ -7,24 +7,39 @@ interface GalleryImage {
   imageUrl: string;
   imagePublicId: string;
   category: string;
+  serviceType: string;
   createdAt: string;
 }
 
 const CATEGORIES = ["Wedding", "Pre-Wedding", "Engagement", "Corporate", "Party", "Portrait", "Other"];
+const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
 
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("Wedding");
+  const [serviceType, setServiceType] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadGallery();
+    loadServices();
   }, []);
+
+  const loadServices = async () => {
+    try {
+      const res = await fetch("/api/services");
+      const data = await res.json();
+      setServices(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load services:", error);
+    }
+  };
 
   const loadGallery = async () => {
     setLoading(true);
@@ -70,6 +85,7 @@ export default function GalleryPage() {
             imageUrl: uploadData.secure_url,
             imagePublicId: uploadData.public_id,
             category,
+            serviceType,
           }),
         });
 
@@ -151,20 +167,43 @@ export default function GalleryPage() {
       <div className="card p-6 space-y-6 fade-in">
         <h2 className="text-lg font-semibold">Upload Photos</h2>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            disabled={uploading}
-            className="input"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={uploading}
+              className="input"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Service Type (Optional)</label>
+            <select
+              value={serviceType}
+              onChange={(e) => setServiceType(e.target.value)}
+              disabled={uploading}
+              className="input"
+            >
+              <option value="">No service type</option>
+              {Array.from(new Set([
+                ...SERVICE_TYPES,
+                ...services.map(s => s.serviceType)
+              ])).map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500">Link these photos to a specific service</p>
+          </div>
         </div>
 
         <div

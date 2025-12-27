@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     const film = await Film.create({
       title: body.title,
       category: body.category,
+      serviceType: body.serviceType || "",
       videoUrl: body.videoUrl,
       videoPublicId: body.videoPublicId,
     });

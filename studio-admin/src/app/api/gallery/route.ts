@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       imageUrl: body.imageUrl,
       imagePublicId: body.imagePublicId,
       category: body.category,
+      serviceType: body.serviceType || "",
     });
 
     return NextResponse.json(image, { status: 201 });

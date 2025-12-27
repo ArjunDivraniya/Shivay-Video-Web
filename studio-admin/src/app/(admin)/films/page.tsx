@@ -6,31 +6,47 @@ interface Film {
   _id: string;
   title: string;
   category: string;
+  serviceType: string;
   videoUrl: string;
   videoPublicId: string;
   createdAt: string;
 }
 
 const FILM_CATEGORIES = ["Wedding Film", "Cinematic", "Promo", "Event", "Other"];
+const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
 
 export default function FilmsPage() {
   const [films, setFilms] = useState<Film[]>([]);
+  const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Wedding Film");
+  const [serviceType, setServiceType] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoPublicId, setVideoPublicId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState("");
+  const [editServiceType, setEditServiceType] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadFilms();
+    loadServices();
   }, []);
+
+  const loadServices = async () => {
+    try {
+      const res = await fetch("/api/services");
+      const data = await res.json();
+      setServices(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load services:", error);
+    }
+  };
 
   const loadFilms = async () => {
     setLoading(true);
@@ -98,6 +114,7 @@ export default function FilmsPage() {
         body: JSON.stringify({
           title,
           category,
+          serviceType,
           videoUrl,
           videoPublicId,
         }),
@@ -110,6 +127,7 @@ export default function FilmsPage() {
       setMessage("✓ Film uploaded successfully!");
       setTitle("");
       setCategory("Wedding Film");
+      setServiceType("");
       setVideoUrl("");
       setVideoPublicId("");
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -173,7 +191,8 @@ export default function FilmsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           title: editTitle,
-          category: editCategory 
+          category: editCategory,
+          serviceType: editServiceType
         }),
       });
 
@@ -181,12 +200,13 @@ export default function FilmsPage() {
 
       setFilms(
         films.map((f) =>
-          f._id === id ? { ...f, title: editTitle, category: editCategory } : f
+          f._id === id ? { ...f, title: editTitle, category: editCategory, serviceType: editServiceType } : f
         )
       );
       setEditingId(null);
       setEditTitle("");
       setEditCategory("");
+      setEditServiceType("");
       setMessage("✓ Film updated");
     } catch (error) {
       setMessage("✗ Failed to update film");
@@ -235,6 +255,27 @@ export default function FilmsPage() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Service Type */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Service Type (Optional)</label>
+          <select
+            value={serviceType}
+            onChange={(e) => setServiceType(e.target.value)}
+            className="input"
+          >
+            <option value="">No service type</option>
+            {Array.from(new Set([
+              ...SERVICE_TYPES,
+              ...services.map(s => s.serviceType)
+            ])).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500">Link this film to a specific service type</p>
         </div>
 
         {/* Video Upload */}

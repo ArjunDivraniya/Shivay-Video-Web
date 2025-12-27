@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
     await dbConnect();
     const body = await req.json();
 
-    if (!body.title || !body.coupleName || !body.place || !body.coverPhoto?.url || !body.coverPhoto?.publicId) {
+    if (!body.title || !body.coupleName || !body.place || !body.serviceType || !body.coverPhoto?.url || !body.coverPhoto?.publicId) {
       return NextResponse.json(
-        { error: "title, coupleName, place, and coverPhoto are required" },
+        { error: "title, coupleName, place, serviceType, and coverPhoto are required" },
         { status: 400 }
       );
     }
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       title: body.title,
       coupleName: body.coupleName,
       place: body.place,
+      serviceType: body.serviceType,
       coverPhoto: body.coverPhoto,
       gallery: body.gallery || [],
     });

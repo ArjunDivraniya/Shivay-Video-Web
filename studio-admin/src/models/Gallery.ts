@@ -4,6 +4,7 @@ export interface IGallery extends Document {
   imageUrl: string;
   imagePublicId: string;
   category: string;
+  serviceType: string;
   createdAt: Date;
 }
 
@@ -11,7 +12,8 @@ const GallerySchema = new Schema<IGallery>(
   {
     imageUrl: { type: String, required: true },
     imagePublicId: { type: String, required: true },
-    category: { type: String, required: true },
+    category: { type: String, default: "All" },
+    serviceType: { type: String, default: "" },
   },
   { timestamps: true }
 );
