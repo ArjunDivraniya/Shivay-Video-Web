@@ -11,7 +11,7 @@ interface Review {
   createdAt: string;
 }
 
-const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Promo", "Other"];
+const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
 
 // Review suggestions based on service type
 const REVIEW_SUGGESTIONS: Record<string, string[]> = {
@@ -36,13 +36,6 @@ const REVIEW_SUGGESTIONS: Record<string, string[]> = {
     "They made our event so memorable with their photography. Fun, professional, and talented!",
     "Perfect party coverage! The candid shots are amazing and everyone loved the experience."
   ],
-  "Promo": [
-    "Excellent promotional content! The visuals really helped elevate our brand.",
-    "Professional and creative approach to our promotional shoot. Very satisfied with the results!",
-    "Great quality promotional photos that perfectly showcase our products/services.",
-    "Very pleased with the promotional content. Professional service and stunning results!",
-    "Outstanding work on our promotional campaign. The photos are exactly what we needed!"
-  ],
   "default": [
     "Excellent service and amazing quality! Highly recommend to anyone looking for professional photography.",
     "Very professional and talented! The results exceeded our expectations.",
@@ -54,6 +47,7 @@ const REVIEW_SUGGESTIONS: Record<string, string[]> = {
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [coupleName, setCoupleName] = useState("");
@@ -66,7 +60,18 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     loadReviews();
+    loadServices();
   }, []);
+
+  const loadServices = async () => {
+    try {
+      const res = await fetch("/api/services");
+      const data = await res.json();
+      setServices(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load services:", error);
+    }
+  };
 
   const loadReviews = async () => {
     setLoading(true);
@@ -207,7 +212,10 @@ export default function ReviewsPage() {
               required
               className="input"
             >
-              {SERVICE_TYPES.map((type) => (
+              {Array.from(new Set([
+                ...SERVICE_TYPES,
+                ...services.map(s => s.serviceType)
+              ])).map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -339,7 +347,10 @@ export default function ReviewsPage() {
                       onChange={(e) => setEditData({ ...editData, serviceType: e.target.value })}
                       className="input w-full"
                     >
-                      {SERVICE_TYPES.map((type) => (
+                      {Array.from(new Set([
+                        ...SERVICE_TYPES,
+                        ...services.map(s => s.serviceType)
+                      ])).map((type) => (
                         <option key={type} value={type}>
                           {type}
                         </option>
