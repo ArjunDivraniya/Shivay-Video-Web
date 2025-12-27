@@ -6,7 +6,10 @@ const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/_next",
-  "/favicon",
+  "/favicon",     // This handles files starting with /favicon
+  "/manifest.json", // Add this line
+  "/android-icon", // Add this to allow android icons (optional)
+  "/ms-icon",      // Add this to allow ms icons (optional)
 ];
 
 function isPublicPath(pathname: string) {
@@ -65,5 +68,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|android-icon|ms-icon).*)"],
 };
