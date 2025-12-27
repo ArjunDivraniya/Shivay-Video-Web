@@ -15,6 +15,7 @@ export async function PUT(
     const updateData: any = {};
     if (body.serviceName) updateData.serviceName = body.serviceName;
     if (body.serviceType) updateData.serviceType = body.serviceType;
+    if (body.description !== undefined) updateData.description = body.description;
     if (body.imageUrl) updateData.imageUrl = body.imageUrl;
     if (body.imagePublicId) updateData.imagePublicId = body.imagePublicId;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;

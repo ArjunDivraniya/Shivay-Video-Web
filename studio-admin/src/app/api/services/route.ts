@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     const service = await Service.create({
       serviceName: body.serviceName,
       serviceType: body.serviceType,
+      description: body.description || "",
       imageUrl: body.imageUrl,
       imagePublicId: body.imagePublicId,
       isActive: body.isActive !== undefined ? body.isActive : true,

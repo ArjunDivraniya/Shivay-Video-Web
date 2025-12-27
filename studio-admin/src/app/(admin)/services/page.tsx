@@ -6,6 +6,7 @@ interface Service {
   _id: string;
   serviceName: string;
   serviceType: string;
+  description: string;
   imageUrl: string;
   imagePublicId: string;
   isActive: boolean;
@@ -13,6 +14,38 @@ interface Service {
 }
 
 const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
+
+// Description suggestions based on service type and name
+const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
+  "Wedding": [
+    "Capture your special day with professional wedding photography",
+    "Complete wedding coverage from ceremony to reception",
+    "Beautiful moments of your wedding day preserved forever",
+    "Professional wedding photography and videography",
+    "Candid moments and posed portraits of your wedding"
+  ],
+  "Corporate": [
+    "Professional corporate event photography",
+    "Business conference and meeting coverage",
+    "Corporate team building and company event photography",
+    "Professional headshots and corporate portraits",
+    "Brand and product photography for your business"
+  ],
+  "Party": [
+    "Fun and vibrant party event photography",
+    "Birthday celebration and party coverage",
+    "Engagement party and celebration photography",
+    "Live event and party moments captured",
+    "Social gathering and celebration photography"
+  ],
+  "default": [
+    "Professional photography services",
+    "Customized photography packages",
+    "High-quality photo and video coverage",
+    "Professional event documentation",
+    "Creative and artistic photography services"
+  ]
+};
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -22,6 +55,8 @@ export default function ServicesPage() {
   const [serviceName, setServiceName] = useState("");
   const [serviceType, setServiceType] = useState("Wedding");
   const [customServiceType, setCustomServiceType] = useState("");
+  const [description, setDescription] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imagePublicId, setImagePublicId] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -107,6 +142,7 @@ export default function ServicesPage() {
         body: JSON.stringify({
           serviceName,
           serviceType: finalServiceType,
+          description,
           imageUrl,
           imagePublicId,
           isActive,
@@ -121,9 +157,11 @@ export default function ServicesPage() {
       setServiceName("");
       setServiceType("Wedding");
       setCustomServiceType("");
+      setDescription("");
       setImageUrl("");
       setImagePublicId("");
       setIsActive(true);
+      setShowSuggestions(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadServices();
     } catch (error: any) {
@@ -156,6 +194,11 @@ export default function ServicesPage() {
     if (files.length > 0) {
       handleUploadImage(files[0]);
     }
+  };
+
+  const getSuggestions = () => {
+    const type = serviceType === "Other" ? "default" : serviceType;
+    return DESCRIPTION_SUGGESTIONS[type] || DESCRIPTION_SUGGESTIONS["default"];
   };
 
   const handleDelete = async (id: string) => {
@@ -257,6 +300,52 @@ export default function ServicesPage() {
             </p>
           </div>
         )}
+
+        {/* Description with Suggestions */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Description</label>
+            <button
+              type="button"
+              onClick={() => setShowSuggestions(!showSuggestions)}
+              className="text-xs text-[var(--accent)] hover:underline"
+            >
+              {showSuggestions ? "Hide suggestions" : "Show suggestions"}
+            </button>
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="input resize-none"
+            placeholder="Enter a description for this service..."
+            rows={3}
+          />
+          <p className="text-xs text-[var(--muted)]">
+            Brief description shown on the service card
+          </p>
+
+          {/* Suggestions Dropdown */}
+          {showSuggestions && (
+            <div className="mt-3 p-3 bg-[var(--primary)]/5 rounded-lg border border-[var(--border)] space-y-2">
+              <p className="text-xs font-medium text-[var(--muted)]">Suggested descriptions:</p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {getSuggestions().map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setDescription(suggestion);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left p-2 text-sm hover:bg-[var(--primary)]/10 rounded transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Image Upload */}
         <div className="space-y-2">
@@ -360,6 +449,11 @@ export default function ServicesPage() {
                   <p className="text-sm text-[var(--muted)]">
                     📂 {service.serviceType}
                   </p>
+                  {service.description && (
+                    <p className="text-xs text-[var(--muted)] line-clamp-2">
+                      {service.description}
+                    </p>
+                  )}
                   <p className="text-xs text-[var(--muted)]">
                     {new Date(service.createdAt).toLocaleDateString()}
                   </p>
@@ -413,6 +507,11 @@ export default function ServicesPage() {
                   <p className="text-sm text-[var(--muted)]">
                     📂 {service.serviceType}
                   </p>
+                  {service.description && (
+                    <p className="text-xs text-[var(--muted)] line-clamp-2">
+                      {service.description}
+                    </p>
+                  )}
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => toggleActive(service)}
