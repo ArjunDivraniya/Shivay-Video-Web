@@ -14,12 +14,7 @@ const links = [
   { href: "/gallery", label: "Photo Gallery", icon: "📸" },
   { href: "/films", label: "Films & Cinematics", icon: "🎬" },
   { href: "/reviews", label: "Client Reviews", icon: "⭐" },
-  { href: "/stories", label: "Stories", icon: "📖" },
-  { href: "/media", label: "Gallery", icon: "🖼️" },
-  { href: "/reels", label: "Reels", icon: "🎞️" },
-  { href: "/testimonials", label: "Testimonials", icon: "💬" },
   { href: "/footer", label: "Footer", icon: "🔗" },
-  { href: "/sections", label: "Section Control", icon: "🗂️" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
@@ -41,13 +36,13 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex h-screen w-68 flex-col border-r border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-lg px-4 py-6 sticky top-0 relative overflow-hidden">
+      <aside className="hidden md:flex h-screen w-68 flex-col border-r border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-lg sticky top-0 relative overflow-hidden">
         <div className="absolute inset-x-4 top-6 h-32 bg-gradient-to-br from-[var(--primary)]/12 via-[var(--accent)]/10 to-transparent blur-3xl rounded-full" aria-hidden />
-        <div className="mb-8 px-2 relative z-10">
+        <div className="mb-8 px-6 py-6 relative z-10 flex-shrink-0">
           <div className="text-xl font-[var(--font-heading)] tracking-tight text-[var(--foreground)]">Shivay Admin</div>
           <div className="text-sm text-[var(--muted)]">Premium Studio CMS</div>
         </div>
-        <nav className="space-y-1 flex-1 relative z-10">
+        <nav className="flex-1 px-4 overflow-y-auto overflow-x-hidden no-scrollbar relative z-10 space-y-1">
           {links.map((link) => {
             const active = pathname?.startsWith(link.href);
             return (
@@ -82,13 +77,15 @@ export default function Sidebar() {
             );
           })}
         </nav>
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="relative z-10 w-full rounded-xl px-4 py-3 text-sm font-semibold text-[var(--primary)] bg-[var(--primary)]/8 hover:bg-[var(--primary)]/12 border border-[var(--border)] transition-colors"
-        >
-          {loggingOut ? "Logging out..." : "Logout"}
-        </button>
+        <div className="mt-auto pt-4 px-4 pb-6 border-t border-[var(--border)] relative z-10 flex-shrink-0">
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-[var(--primary)] bg-[var(--primary)]/8 hover:bg-[var(--primary)]/12 border border-[var(--border)] transition-colors"
+          >
+            {loggingOut ? "Logging out..." : "Logout"}
+          </button>
+        </div>
       </aside>
 
       <MobileTabBar pathname={pathname} onLogout={handleLogout} loggingOut={loggingOut} />
