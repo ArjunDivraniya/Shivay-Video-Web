@@ -21,6 +21,7 @@ export default function ServicesPage() {
   const [message, setMessage] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [serviceType, setServiceType] = useState("Wedding");
+  const [customServiceType, setCustomServiceType] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imagePublicId, setImagePublicId] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -82,8 +83,17 @@ export default function ServicesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!serviceName.trim() || !serviceType || !imageUrl || !imagePublicId) {
+    const finalServiceType = serviceType === "Other" && customServiceType.trim()
+      ? customServiceType.trim()
+      : serviceType;
+
+    if (!serviceName.trim() || !finalServiceType || !imageUrl || !imagePublicId) {
       setMessage("✗ Please fill in all fields and upload an image");
+      return;
+    }
+
+    if (serviceType === "Other" && !customServiceType.trim()) {
+      setMessage("✗ Please enter a custom service type");
       return;
     }
 
@@ -96,12 +106,13 @@ export default function ServicesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceName,
-          serviceType,
+          serviceType: finalServiceType,
           imageUrl,
           imagePublicId,
           isActive,
         }),
-      });
+      });CustomServiceType("");
+      set
 
       if (!res.ok) {
         throw new Error("Failed to create service");
@@ -213,7 +224,7 @@ export default function ServicesPage() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Service Type</label>
+            <label className="text-sm font-medium">Service Type (Recommended)</label>
             <select
               value={serviceType}
               onChange={(e) => setServiceType(e.target.value)}
@@ -228,6 +239,24 @@ export default function ServicesPage() {
             </select>
           </div>
         </div>
+
+        {/* Custom Service Type */}
+        {serviceType === "Other" && (
+          <div className="space-y-2 fade-in">
+            <label className="text-sm font-medium">Custom Service Type</label>
+            <input
+              type="text"
+              value={customServiceType}
+              onChange={(e) => setCustomServiceType(e.target.value)}
+              required
+              className="input"
+              placeholder="e.g., Product Photography, Fashion Shoot, etc."
+            />
+            <p className="text-xs text-[var(--muted)]">
+              Define your own service type when "Other" is selected
+            </p>
+          </div>
+        )}
 
         {/* Image Upload */}
         <div className="space-y-2">

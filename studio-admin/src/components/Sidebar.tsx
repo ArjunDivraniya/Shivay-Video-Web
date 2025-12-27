@@ -10,6 +10,7 @@ const links = [
   { href: "/our-story", label: "Our Story", icon: "📜" },
   { href: "/services", label: "Services", icon: "🎯" },
   { href: "/weddings", label: "Wedding Stories", icon: "💒" },
+  { href: "/gallery", label: "Photo Gallery", icon: "📸" },
   { href: "/stories", label: "Stories", icon: "📖" },
   { href: "/media", label: "Gallery", icon: "🖼️" },
   { href: "/reels", label: "Reels", icon: "🎬" },

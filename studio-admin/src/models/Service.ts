@@ -14,8 +14,7 @@ const ServiceSchema = new Schema<IService>(
     serviceName: { type: String, required: true },
     serviceType: { 
       type: String, 
-      required: true,
-      enum: ["Wedding", "Corporate", "Party", "Other"]
+      required: true
     },
     imageUrl: { type: String, required: true },
     imagePublicId: { type: String, required: true },
