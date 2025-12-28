@@ -2,16 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 
-// UPDATE THIS ARRAY
 const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/_next",
   "/favicon",
-  "/manifest.json",       // <-- Add this
-  "/android-icon",        // <-- Add this for your icons
-  "/apple-icon",          // <-- Add this for iOS icons
-  "/ms-icon"              // <-- Add this for Microsoft icons
+  "/manifest.json",
+  "/android-icon",
+  "/ms-icon",
 ];
 
 function isPublicPath(pathname: string) {
@@ -22,54 +20,53 @@ function getToken(req: NextRequest) {
   return req.cookies.get("admin_token")?.value;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = getToken(req);
 
   // Redirect logged-in users from login page to dashboard
   if (pathname === "/login" && token) {
     try {
-      verifyToken(token);
+      await verifyToken(token);
       return NextResponse.redirect(new URL("/dashboard", req.url));
     } catch (error) {
-      // Invalid token, allow login page
+      // Invalid token, allow login page load
     }
   }
 
-  // Allow public paths (only login and assets)
+  // Allow public paths
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
   // All API routes require authentication
   if (pathname.startsWith("/api")) {
-    const token = getToken(req);
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     try {
-      verifyToken(token);
+      await verifyToken(token);
       return NextResponse.next();
     } catch (error) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  // Protect admin pages
+  // Protect admin pages (Dashboard, etc.)
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    verifyToken(token);
+    await verifyToken(token);
     return NextResponse.next();
   } catch (error) {
     console.error("Token verification failed:", error);
+    // Token is invalid/expired, redirect to login
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
-  // You can also exclude manifest.json here to be double safe
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

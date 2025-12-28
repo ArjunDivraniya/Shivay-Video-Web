@@ -1,23 +1,24 @@
-import jwt from "jsonwebtoken";
-import { SignOptions } from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = process.env.JWT_SECRET;
+// Fallback for development if .env is missing, but try to use .env
+const secretKey = new TextEncoder().encode(JWT_SECRET || "default_secret_key_change_me");
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables");
+export async function signToken(payload: any) {
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("7d")
+    .sign(secretKey);
+  
+  return token;
 }
 
-type JwtPayload = {
-  sub: string;
-  email: string;
-  role: string;
-};
-
-export function signToken(payload: JwtPayload, expiresIn = "7d") {
-  const options: SignOptions = { expiresIn: expiresIn as any };
-  return jwt.sign(payload, JWT_SECRET, options);
-}
-
-export function verifyToken(token: string) {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+export async function verifyToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secretKey);
+    return payload;
+  } catch (error) {
+    throw new Error("Invalid token");
+  }
 }
