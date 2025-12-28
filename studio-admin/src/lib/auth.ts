@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
 import { verifyToken } from "./jwt";
-import dbConnect from "./mongodb";
-import Admin from "@/models/Admin";
 
 export async function requireAdmin() {
   const cookieStore = await cookies();
@@ -9,11 +7,18 @@ export async function requireAdmin() {
   if (!token) return null;
 
   try {
-    const payload = verifyToken(token);
-    await dbConnect();
-    const admin = await Admin.findById(payload.sub).lean();
-    if (!admin) return null;
-    return { id: payload.sub, email: payload.email, role: payload.role };
+    // FIX 1: Add 'await' (verifyToken is async now)
+    const payload = await verifyToken(token);
+
+    // FIX 2: Remove Database calls. 
+    // We trust the token directly since we signed it with our server secret.
+    // This matches the new Login system we set up.
+
+    return { 
+      id: payload.sub, 
+      email: payload.email, 
+      role: payload.role 
+    };
   } catch (error) {
     return null;
   }
