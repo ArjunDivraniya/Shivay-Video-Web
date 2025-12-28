@@ -60,6 +60,8 @@ export default function LoginPage() {
             <label className="text-sm font-medium text-[var(--foreground)]/80">Email</label>
             <input
               type="email"
+              name="username"
+              autoComplete="username"
               className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -71,11 +73,13 @@ export default function LoginPage() {
             <label className="text-sm font-medium text-[var(--foreground)]/80">Password</label>
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
+
               className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              autoComplete="current-password"
               required
             />
           </div>
