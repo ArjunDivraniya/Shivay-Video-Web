@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -9,12 +9,22 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+// 1. Separate Viewport export (Standard for PWA in Next.js 14+)
+export const viewport: Viewport = {
+  themeColor: "#6e1f2a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Makes it feel like a native app
+};
+
 export const metadata: Metadata = {
   title: "Shivay Studio Admin",
   description: "Content control for the wedding & event portfolio",
   manifest: "/manifest.json",
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
@@ -35,7 +45,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Shivay Studio Admin",
+    title: "Shivay Admin",
   },
   formatDetection: {
     telephone: false,
@@ -54,17 +64,11 @@ export const metadata: Metadata = {
       "msapplication-TileImage": "/ms-icon-144x144.png",
     },
   },
-  themeColor: "#6e1f2a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Shivay Admin" />
-      </head>
       <body className={`${inter.variable} ${playfair.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}>
         {children}
       </body>
