@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -20,28 +20,33 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include",
+        credentials: "include", // This is critical for cookies
       });
 
+      // 1. Check if the server actually crashed or gave a 404/500
       if (!res.ok) {
         const body = await res.json();
-        setError(body.error || "Login failed");
+        setError(body.error || "Server error: " + res.status);
         setLoading(false);
         return;
       }
 
       const data = await res.json();
       
+      // 2. LOG THE RESPONSE so you can see it in the Console (F12)
+      console.log("Server Response:", data);
+
       if (data.success) {
-        // Add small delay to ensure cookie is set
         await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Use window.location for reliable redirect on deployment
         window.location.href = "/dashboard";
+      } else {
+        // 3. CATCH THE SILENT FAILURE
+        setError(data.error || "Login failed: Server returned success=false");
+        setLoading(false);
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.message || "Login failed");
+      setError(err.message || "Network Error");
       setLoading(false);
     }
   };
