@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -20,33 +20,32 @@ const submit = async (e: React.FormEvent) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // This is critical for cookies
+        credentials: "include",
       });
 
-      // 1. Check if the server actually crashed or gave a 404/500
+      // Handle HTTP errors (4xx, 5xx)
       if (!res.ok) {
         const body = await res.json();
-        setError(body.error || "Server error: " + res.status);
+        setError(body.error || `Server Error (${res.status})`);
         setLoading(false);
         return;
       }
 
       const data = await res.json();
-      
-      // 2. LOG THE RESPONSE so you can see it in the Console (F12)
-      console.log("Server Response:", data);
+      console.log("Login Response:", data); // Check console (F12) for this!
 
       if (data.success) {
+        // Success!
         await new Promise(resolve => setTimeout(resolve, 100));
         window.location.href = "/dashboard";
       } else {
-        // 3. CATCH THE SILENT FAILURE
+        // CATCH THE SILENT FAILURE HERE
         setError(data.error || "Login failed: Server returned success=false");
         setLoading(false);
       }
     } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.message || "Network Error");
+      console.error("Login network error:", err);
+      setError(err.message || "Network connection failed");
       setLoading(false);
     }
   };
@@ -65,7 +64,7 @@ const submit = async (e: React.FormEvent) => {
             <label className="text-sm font-medium text-[var(--foreground)]/80">Email</label>
             <input
               type="email"
-              name="username"
+              name="email"
               autoComplete="username"
               className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               value={email}
@@ -80,7 +79,6 @@ const submit = async (e: React.FormEvent) => {
               type="password"
               name="password"
               autoComplete="current-password"
-
               className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -97,7 +95,6 @@ const submit = async (e: React.FormEvent) => {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
-        
       </div>
     </div>
   );
