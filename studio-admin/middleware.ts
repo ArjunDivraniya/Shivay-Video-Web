@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 
+// UPDATE THIS ARRAY
 const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/_next",
-  "/favicon",     // This handles files starting with /favicon
-  "/manifest.json", // Add this line
-  "/android-icon", // Add this to allow android icons (optional)
-  "/ms-icon",      // Add this to allow ms icons (optional)
+  "/favicon",
+  "/manifest.json",       // <-- Add this
+  "/android-icon",        // <-- Add this for your icons
+  "/apple-icon",          // <-- Add this for iOS icons
+  "/ms-icon"              // <-- Add this for Microsoft icons
 ];
 
 function isPublicPath(pathname: string) {
@@ -68,5 +70,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|android-icon|ms-icon).*)"],
+  // You can also exclude manifest.json here to be double safe
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json).*)"],
 };
