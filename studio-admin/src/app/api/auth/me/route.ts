@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
-import dbConnect from "@/lib/mongodb";
-import Admin from "@/models/Admin";
 
 export async function GET(request: Request) {
   try {
@@ -14,13 +12,19 @@ export async function GET(request: Request) {
 
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const payload = verifyToken(token);
-    await dbConnect();
-    const admin = (await Admin.findById(payload.sub).lean()) as any;
-    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // FIX 1: Added 'await' because verifyToken is now async
+    const payload = await verifyToken(token);
 
-    return NextResponse.json({ email: admin.email, role: admin.role });
+    // FIX 2: Removed Database call.
+    // Since we are using Environment Variables for login, we trust the token data directly.
+    // This matches the "sub: 'admin'" we set in the login route.
+    
+    return NextResponse.json({ 
+      email: payload.email, 
+      role: payload.role 
+    });
   } catch (error: any) {
+    console.error("Auth check error:", error);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
