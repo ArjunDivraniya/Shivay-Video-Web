@@ -1,40 +1,7 @@
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
-import { useRef } from "react";
-import preweddingImage from "@/assets/prewedding-1.jpg";
+import { useRef, useEffect, useState } from "react";
+import { apiService, WeddingStory } from "@/services/api";
 import weddingCeremony from "@/assets/wedding-ceremony.jpg";
-import mehndiCelebration from "@/assets/mehndi-celebration.jpg";
-import haldiCeremony from "@/assets/haldi-ceremony.jpg";
-
-const stories = [
-  {
-    id: 1,
-    couple: "Priya & Rahul",
-    event: "Royal Wedding",
-    location: "Udaipur",
-    image: weddingCeremony,
-  },
-  {
-    id: 2,
-    couple: "Ananya & Dev",
-    event: "Pre-Wedding",
-    location: "Goa",
-    image: preweddingImage,
-  },
-  {
-    id: 3,
-    couple: "Kavya & Arjun",
-    event: "Mehndi Celebration",
-    location: "Jaipur",
-    image: mehndiCelebration,
-  },
-  {
-    id: 4,
-    couple: "Sneha & Vikram",
-    event: "Haldi Ceremony",
-    location: "Ahmedabad",
-    image: haldiCeremony,
-  },
-];
 
 // Progress Bar Component
 const ProgressIndicator = ({ 
@@ -67,11 +34,13 @@ const ProgressIndicator = ({
 const StoryCard = ({ 
   story, 
   index, 
-  scrollYProgress 
+  scrollYProgress,
+  totalStories
 }: { 
-  story: typeof stories[0]; 
+  story: WeddingStory; 
   index: number;
   scrollYProgress: MotionValue<number>;
+  totalStories: number;
 }) => {
   const imageY = useTransform(
     scrollYProgress,
@@ -99,7 +68,7 @@ const StoryCard = ({
           style={{ y: imageY, scale: imageScale }}
         >
           <img
-            src={story.image}
+            src={story.image || weddingCeremony}
             alt={`${story.couple} wedding story`}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
@@ -126,10 +95,23 @@ const StoryCard = ({
 
 const WeddingStoriesSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [stories, setStories] = useState<WeddingStory[]>([]);
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
+
+  useEffect(() => {
+    const fetchStories = async () => {
+      console.log('Fetching wedding stories...');
+      const data = await apiService.getStories();
+      console.log('Received stories data:', data);
+      console.log('Number of stories:', data.length);
+      setStories(data);
+    };
+    fetchStories();
+  }, []);
 
   // --- CRITICAL FIX ---
   // We use 'vw' units, not '%'. 
@@ -183,17 +165,24 @@ const WeddingStoriesSection = () => {
           style={{ x }}
           className="flex items-center gap-6 md:gap-16 px-6 md:px-24 w-max h-full pt-10"
         >
-          {stories.map((story, index) => (
-            <StoryCard
-              key={story.id}
-              story={story}
-              index={index}
-              scrollYProgress={scrollYProgress}
-            />
-          ))}
+          {stories.length === 0 ? (
+            <div className="text-ivory text-center w-full">
+              <p className="font-display text-2xl">Loading wedding stories...</p>
+            </div>
+          ) : (
+            stories.map((story, index) => (
+              <StoryCard
+                key={story._id}
+                story={story}
+                index={index}
+                scrollYProgress={scrollYProgress}
+                totalStories={stories.length}
+              />
+            ))
+          )}
           
           {/* Spacer to keep last card visible */}
-          <div className="w-[5vw] flex-shrink-0" />
+          {stories.length > 0 && <div className="w-[5vw] flex-shrink-0" />}
         </motion.div>
       </div>
     </section>

@@ -1,24 +1,11 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
+import { apiService, GalleryImage as ApiGalleryImage } from "@/services/api";
 import gallery1 from "@/assets/gallery-1.jpg";
-import gallery2 from "@/assets/gallery-2.jpg";
-import gallery3 from "@/assets/gallery-3.jpg";
-import gallery4 from "@/assets/gallery-4.jpg";
-import couplePortrait from "@/assets/couple-portrait.jpg";
-import heroWedding from "@/assets/hero-wedding.jpg";
-import weddingCeremony from "@/assets/wedding-ceremony.jpg";
-import preweddingImage from "@/assets/prewedding-1.jpg";
 
-const galleryImages = [
-  { id: 1, src: gallery1, alt: "Romantic sunset silhouette", span: "row-span-2", depth: 0.1 },
-  { id: 2, src: gallery2, alt: "Bride getting ready", span: "", depth: 0.15 },
-  { id: 3, src: gallery3, alt: "Baraat celebration", span: "row-span-2", depth: 0.08 },
-  { id: 4, src: gallery4, alt: "First dance", span: "", depth: 0.12 },
-  { id: 5, src: heroWedding, alt: "Beautiful bride portrait", span: "", depth: 0.18 },
-  { id: 6, src: couplePortrait, alt: "Wedding couple", span: "row-span-2", depth: 0.06 },
-  { id: 7, src: weddingCeremony, alt: "Wedding ceremony", span: "", depth: 0.14 },
-  { id: 8, src: preweddingImage, alt: "Pre-wedding shoot", span: "", depth: 0.1 },
-];
+type GalleryImage = ApiGalleryImage & {
+  depth?: number;
+};
 
 // Individual gallery item with parallax
 const GalleryItem = ({ 
@@ -26,7 +13,7 @@ const GalleryItem = ({
   index, 
   scrollYProgress 
 }: { 
-  image: typeof galleryImages[0]; 
+  image: GalleryImage; 
   index: number;
   scrollYProgress: any;
 }) => {
@@ -34,16 +21,17 @@ const GalleryItem = ({
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   
   // Each image has different parallax depth
+  const depth = image.depth || 0.1;
   const y = useTransform(
     scrollYProgress,
     [0, 1],
-    [`${image.depth * 100}%`, `-${image.depth * 100}%`]
+    [`${depth * 100}%`, `-${depth * 100}%`]
   );
   
   const scale = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    [1, 1 + image.depth * 0.5, 1]
+    [1, 1 + depth * 0.5, 1]
   );
 
   // Staggered reveal delays based on position
@@ -61,7 +49,7 @@ const GalleryItem = ({
         delay: staggerDelay,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
-      className={`group relative overflow-hidden rounded-sm cursor-pointer ${image.span}`}
+      className={`group relative overflow-hidden rounded-sm cursor-pointer ${image.span || ""}`}
     >
       {/* Parallax image container */}
       <motion.div 
@@ -69,7 +57,7 @@ const GalleryItem = ({
         style={{ y, scale }}
       >
         <motion.img
-          src={image.src}
+          src={image.src || gallery1}
           alt={image.alt}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           initial={{ filter: "blur(8px)", scale: 1.1 }}
@@ -104,11 +92,25 @@ const GallerySection = () => {
   const containerRef = useRef(null);
   const headerRef = useRef(null);
   const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" });
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"],
   });
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      const data = await apiService.getGallery();
+      // Add random depth values for parallax effect
+      const imagesWithDepth = data.map((img, index) => ({
+        ...img,
+        depth: 0.06 + (index % 5) * 0.03,
+      }));
+      setGalleryImages(imagesWithDepth);
+    };
+    fetchGallery();
+  }, []);
 
   return (
     <section ref={containerRef} className="relative py-24 md:py-32 bg-ivory overflow-hidden">
@@ -161,7 +163,7 @@ const GallerySection = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
           {galleryImages.map((image, index) => (
             <GalleryItem
-              key={image.id}
+              key={image._id}
               image={image}
               index={index}
               scrollYProgress={scrollYProgress}

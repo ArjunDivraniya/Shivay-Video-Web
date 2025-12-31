@@ -1,38 +1,21 @@
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
-
-const testimonials = [
-  {
-    id: 1,
-    quote: "They didn't just capture our wedding, they captured our love story. Every photo brings tears of joy.",
-    couple: "Priya & Rahul",
-    event: "Udaipur Wedding",
-  },
-  {
-    id: 2,
-    quote: "The attention to detail was incredible. They knew exactly when to click to get those magical moments.",
-    couple: "Ananya & Dev",
-    event: "Destination Pre-Wedding",
-  },
-  {
-    id: 3,
-    quote: "Aura Studios made us feel so comfortable. The photos are natural, beautiful, and truly us.",
-    couple: "Kavya & Arjun",
-    event: "Traditional Gujarati Wedding",
-  },
-  {
-    id: 4,
-    quote: "Professional, creative, and so passionate about their work. Highly recommend!",
-    couple: "Sneha & Vikram",
-    event: "Mumbai Wedding",
-  },
-];
+import { apiService, Testimonial } from "@/services/api";
 
 const TestimonialsSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [activeIndex, setActiveIndex] = useState(0);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      const data = await apiService.getTestimonials();
+      setTestimonials(data);
+    };
+    fetchTestimonials();
+  }, []);
 
   const nextTestimonial = () => {
     setActiveIndex((prev) => (prev + 1) % testimonials.length);
@@ -73,7 +56,7 @@ const TestimonialsSection = () => {
             >
               {testimonials.map((testimonial) => (
                 <div
-                  key={testimonial.id}
+                  key={testimonial._id}
                   className="w-full flex-shrink-0 px-4"
                 >
                   <motion.div

@@ -1,15 +1,27 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ChevronDown, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiService, HeroData } from "@/services/api";
 import heroImage from "@/assets/hero-wedding.jpg";
 
 const HeroSection = () => {
   const ref = useRef(null);
+  const [heroData, setHeroData] = useState<HeroData | null>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
   });
+
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      const data = await apiService.getHeroData();
+      if (data) {
+        setHeroData(data);
+      }
+    };
+    fetchHeroData();
+  }, []);
 
   // Parallax effects
   const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -30,7 +42,7 @@ const HeroSection = () => {
         style={{ y: imageY, scale: imageScale }}
       >
         <motion.img
-          src={heroImage}
+          src={heroData?.heroImage || heroImage}
           alt="Wedding photography showcasing beautiful Indian bride"
           className="h-full w-full object-cover"
           initial={{ scale: 1.1 }}
@@ -61,7 +73,7 @@ const HeroSection = () => {
           className="mb-6"
         >
           <span className="font-body text-sm tracking-widest-xl text-ivory/90 uppercase">
-            Junagadh • Gujarat
+            {heroData?.location || "Junagadh • Gujarat"}
           </span>
         </motion.div>
 
@@ -72,7 +84,7 @@ const HeroSection = () => {
           transition={{ delay: 0.5, duration: 1 }}
           className="font-display text-5xl md:text-7xl lg:text-8xl text-ivory font-semibold mb-4 drop-shadow-lg"
         >
-          <span className="text-gold-gradient">Aura</span> Studios
+          <span className="text-gold-gradient">{heroData?.studioName || "Aura"}</span> Studios
         </motion.h1>
 
         {/* Tagline */}
@@ -82,7 +94,7 @@ const HeroSection = () => {
           transition={{ delay: 0.7, duration: 0.8 }}
           className="font-display text-xl md:text-2xl text-ivory/95 italic mb-12 max-w-2xl drop-shadow-md"
         >
-          Where emotions become timeless frames
+          {heroData?.tagline || "Where emotions become timeless frames"}
         </motion.p>
 
         {/* CTAs */}

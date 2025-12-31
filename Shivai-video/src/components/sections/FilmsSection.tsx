@@ -1,29 +1,9 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Play } from "lucide-react";
+import { apiService, Film } from "@/services/api";
 
-const videos = [
-  {
-    id: 1,
-    title: "Priya & Rahul's Wedding Film",
-    category: "Wedding Film",
-    thumbnail: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Coastal Pre-Wedding Reel",
-    category: "Pre-Wedding",
-    thumbnail: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Grand Sangeet Night",
-    category: "Event Highlight",
-    thumbnail: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&auto=format&fit=crop",
-  },
-];
-
-const VideoCard = ({ video, index }: { video: typeof videos[0], index: number }) => {
+const VideoCard = ({ video, index }: { video: Film, index: number }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   
@@ -89,6 +69,15 @@ const VideoCard = ({ video, index }: { video: typeof videos[0], index: number })
 const FilmsSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [videos, setVideos] = useState<Film[]>([]);
+
+  useEffect(() => {
+    const fetchFilms = async () => {
+      const data = await apiService.getFilms();
+      setVideos(data);
+    };
+    fetchFilms();
+  }, []);
 
   return (
     <section ref={ref} className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
@@ -114,7 +103,7 @@ const FilmsSection = () => {
         {/* Video Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map((video, index) => (
-            <VideoCard key={video.id} video={video} index={index} />
+            <VideoCard key={video._id} video={video} index={index} />
           ))}
         </div>
       </div>
