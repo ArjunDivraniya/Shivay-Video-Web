@@ -126,15 +126,22 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-
 @layer base {
+  html {
+    /* Change from smooth to auto */
+    scroll-behavior: auto; 
+  }
+}
+@layer base {
+  
   * {
     @apply border-border;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+ /* Update this line in index.css to 'auto' to fix the sticky lock bug */
+html {
+  scroll-behavior: auto; /* Changed from smooth */
+}
 
   body {
     @apply bg-background text-foreground font-body antialiased;

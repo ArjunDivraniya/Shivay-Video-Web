@@ -6,14 +6,20 @@ import weddingCeremony from "@/assets/wedding-ceremony.jpg";
 // Progress Bar Component
 const ProgressIndicator = ({ 
   scrollYProgress, 
-  index 
+  index,
+  total 
 }: { 
   scrollYProgress: MotionValue<number>; 
   index: number;
+  total: number;
 }) => {
+  const step = 1 / total;
+  const start = index * step;
+  const end = (index + 1) * step;
+
   const scaleX = useTransform(
     scrollYProgress,
-    [index * 0.25, (index + 1) * 0.25],
+    [start, end],
     [0, 1]
   );
 
@@ -30,68 +36,29 @@ const ProgressIndicator = ({
   );
 };
 
-// Story Card with Internal Parallax
-const StoryCard = ({ 
-  story, 
-  index, 
-  scrollYProgress,
-  totalStories
-}: { 
-  story: WeddingStory; 
-  index: number;
-  scrollYProgress: MotionValue<number>;
-  totalStories: number;
-}) => {
-  const imageY = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ["0%", "15%"]
-  );
-
-  const imageScale = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    [1, 1.05, 1.1]
-  );
-
-  return (
-    <motion.div
-      className="relative flex-shrink-0 w-[85vw] md:w-[60vw] h-[70vh]"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ margin: "-50px" }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="relative h-full overflow-hidden rounded-sm group">
-        <motion.div
-          className="absolute inset-0 w-full h-[120%] -top-[10%]"
-          style={{ y: imageY, scale: imageScale }}
-        >
-          <img
-            src={story.image || weddingCeremony}
-            alt={`${story.couple} wedding story`}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-        </motion.div>
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/20 to-transparent" />
-        <div className="absolute inset-6 border border-gold/20 rounded-sm pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        <div className="absolute bottom-8 left-8 right-8">
-          <span className="font-body text-xs tracking-widest text-gold uppercase mb-2 block">
-            {String(index + 1).padStart(2, '0')} / {story.event}
-          </span>
-          <h3 className="font-display text-3xl md:text-4xl text-ivory mb-2">
-            {story.couple}
-          </h3>
-          <p className="font-body text-ivory/70 text-sm">
-            {story.location}
-          </p>
-        </div>
+const StoryCard = ({ story, index }: { story: WeddingStory; index: number }) => (
+  <div className="relative flex-shrink-0 w-[85vw] md:w-[65vw] h-[65vh] md:h-[70vh]">
+    <div className="relative h-full overflow-hidden rounded-sm group">
+      <img
+        src={story.image || story.coverPhoto?.url || weddingCeremony}
+        alt={story.coupleName || story.couple}
+        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/20 to-transparent" />
+      <div className="absolute bottom-8 left-8 right-8">
+        <span className="font-body text-[10px] tracking-[0.3em] text-gold uppercase mb-3 block">
+          {String(index + 1).padStart(2, '0')} — {story.serviceType || story.event}
+        </span>
+        <h3 className="font-display text-3xl md:text-5xl text-ivory mb-2">
+          {story.coupleName || story.couple}
+        </h3>
+        <p className="font-body text-ivory/60 text-xs md:text-sm tracking-wide">
+          {story.place || story.location}
+        </p>
       </div>
-    </motion.div>
-  );
-};
+    </div>
+  </div>
+);
 
 const WeddingStoriesSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,15 +67,13 @@ const WeddingStoriesSection = () => {
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"],
+    offset: ["start start", "end end"]
   });
 
   useEffect(() => {
     const fetchStories = async () => {
-      setIsLoading(true);
       try {
         const data = await apiService.getWeddingStories();
-        console.log('Fetched wedding stories:', data);
         setStories(data);
       } catch (error) {
         console.error('Failed to load wedding stories:', error);
@@ -119,82 +84,71 @@ const WeddingStoriesSection = () => {
     fetchStories();
   }, []);
 
-  // --- CRITICAL FIX ---
-  // We use 'vw' units, not '%'. 
-  // 4 cards * 85vw width = approx 340vw total width.
-  // To reach the end, we shift left by approx 255vw.
-  // Using `totalCards - 1` ensures we stop exactly on the last card.
-  const totalScrollVW = Math.max((stories.length - 1) * 85, 0); 
-  
-  const x = useTransform(scrollYProgress, [0, 1], ["0vw", `-${totalScrollVW}vw`]);
+  // Use percentages instead of vw for the x transform to avoid alignment drift
+  const x = useTransform(
+    scrollYProgress, 
+    [0, 1], 
+    ["0%", `-${stories.length > 0 ? (stories.length - 1) * 80 : 0}%`]
+  );
+
+  if (!isLoading && stories.length === 0) return null;
 
   return (
     <section 
       ref={containerRef} 
       className="relative bg-charcoal"
-      // Height controls the speed. 350vh is a comfortable scroll length.
-      style={{ height: "350vh" }}
+      // Multiply height by stories to make the scroll speed feel natural
+      style={{ height: `${Math.max(stories.length * 100, 300)}vh` }}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center">
-        {/* Header */}
-        <div className="absolute top-10 left-6 md:left-12 z-20">
-          <motion.span
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            className="text-sm tracking-widest-xl text-gold uppercase font-body block mb-2"
-          >
+        {/* Header Title */}
+        <div className="absolute top-12 left-6 md:left-12 z-20">
+          <span className="text-[10px] tracking-[0.4em] text-gold uppercase font-body block mb-3">
             Portfolio
-          </motion.span>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="font-display text-4xl md:text-5xl text-ivory"
-          >
+          </span>
+          <h2 className="font-display text-4xl md:text-7xl text-ivory">
             Wedding Stories
-          </motion.h2>
+          </h2>
         </div>
 
-        {/* Progress Indicators */}
-        <div className="absolute top-10 right-6 md:right-12 z-20 flex items-center gap-2">
-          {stories.map((_, index) => (
+        {/* Progress Bars */}
+        <div className="absolute top-16 right-6 md:right-12 z-20 flex items-center gap-3">
+          {!isLoading && stories.map((_, index) => (
             <ProgressIndicator 
               key={index} 
               scrollYProgress={scrollYProgress} 
-              index={index} 
+              index={index}
+              total={stories.length}
             />
           ))}
         </div>
 
-        {/* Horizontal Container */}
-        {/* Added w-max to ensure container wraps all cards horizontally */}
-        <motion.div
-          style={{ x }}
-          className="flex items-center gap-6 md:gap-16 px-6 md:px-24 w-max h-full pt-10"
-        >
-          {isLoading ? (
-            <div className="text-ivory text-center w-full">
-              <p className="font-display text-2xl">Loading wedding stories...</p>
-            </div>
-          ) : stories.length === 0 ? (
-            <div className="text-ivory text-center w-full">
-              <p className="font-display text-2xl">No wedding stories found.</p>
-              <p className="font-body text-ivory/70 mt-2">Add stories in the admin panel to see them here.</p>
-            </div>
-          ) : (
-            stories.map((story, index) => (
-              <StoryCard
-                key={story._id}
-                story={story}
-                index={index}
-                scrollYProgress={scrollYProgress}
-                totalStories={stories.length}
-              />
-            ))
-          )}
-          
-          {/* Spacer to keep last card visible */}
-          {stories.length > 0 && <div className="w-[5vw] flex-shrink-0" />}
-        </motion.div>
+        {/* Main Horizontal Track */}
+        <div className="flex h-full items-center">
+          <motion.div
+            style={{ x }}
+            className="flex items-center gap-12 md:gap-24 px-6 md:px-24 will-change-transform"
+          >
+            {isLoading ? (
+              <div className="w-screen flex justify-center">
+                <p className="font-display text-2xl text-gold animate-pulse">Loading...</p>
+              </div>
+            ) : (
+              stories.map((story, index) => (
+                <StoryCard key={story._id} story={story} index={index} />
+              ))
+            )}
+            {/* End buffer */}
+            <div className="w-[10vw] flex-shrink-0" />
+          </motion.div>
+        </div>
+
+        {/* Decorative Watermark */}
+        <div className="absolute bottom-10 left-6 md:left-12 pointer-events-none opacity-5">
+          <p className="font-display text-[15vh] text-ivory leading-none select-none">
+            SHIVAY
+          </p>
+        </div>
       </div>
     </section>
   );
