@@ -108,6 +108,7 @@ const WeddingStoriesSection = () => {
       setIsLoading(true);
       try {
         const data = await apiService.getWeddingStories();
+        console.log('Fetched wedding stories:', data);
         setStories(data);
       } catch (error) {
         console.error('Failed to load wedding stories:', error);

@@ -8,16 +8,27 @@ export default function PWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Register service worker
+    // In dev we avoid SW to prevent stale chunk caches; also clean any old registrations.
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.log('❌ Service Worker registration failed:', error);
-        });
+      const isDev = process.env.NODE_ENV === 'development';
+
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        if (isDev) {
+          regs.forEach((reg) => reg.unregister());
+          return; // skip registering in dev to avoid chunk load errors
+        }
+
+        if (regs.length === 0) {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('✅ Service Worker registered:', registration);
+            })
+            .catch((error) => {
+              console.log('❌ Service Worker registration failed:', error);
+            });
+        }
+      });
     }
 
     // Check if app is already installed
@@ -60,7 +71,7 @@ export default function PWAInstall() {
   };
 
   // Don't show install button if already installed or not available
-  if (isInstalled || !showInstallPrompt) {
+  if (isInstalled || !showInstallPrompt || process.env.NODE_ENV === 'development') {
     return null;
   }
 

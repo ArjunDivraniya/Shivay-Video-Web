@@ -1,4 +1,5 @@
-const API_BASE_URL = 'https://shivay-video-admin.vercel.app/api';
+// Use relative path in dev (proxied by Vite), absolute in production
+const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api';
 
 export interface HeroData {
   studioName?: string;
