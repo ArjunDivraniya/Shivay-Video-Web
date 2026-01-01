@@ -1,18 +1,28 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import couplePortrait from "@/assets/couple-portrait.jpg";
-
-const stats = [
-  { value: "500+", label: "Weddings" },
-  { value: "8+", label: "Years" },
-  { value: "50+", label: "Destinations" },
-  { value: "100%", label: "Happy Couples" },
-];
+import { apiService, AboutData } from "@/services/api";
 
 const AboutSection = () => {
   const ref = useRef(null);
   const containerRef = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [aboutData, setAboutData] = useState<AboutData | null>(null);
+
+  useEffect(() => {
+    const fetchAbout = async () => {
+      try {
+        const data = await apiService.getAbout();
+        if (data) {
+          setAboutData(data);
+        }
+      } catch (error) {
+        console.error("Failed to load about data:", error);
+      }
+    };
+
+    fetchAbout();
+  }, []);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -20,11 +30,27 @@ const AboutSection = () => {
   });
 
   // Parallax effects
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
-  const imageY = useTransform(scrollYProgress, [0, 1], ["10%", "-10%"]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]); 
+  const imageY = useTransform(scrollYProgress, [0, 1], ["10%", "-10%"]); 
   const imageScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 1.02]);
   const frameY = useTransform(scrollYProgress, [0, 1], ["20%", "-20%"]);
   const contentY = useTransform(scrollYProgress, [0, 1], ["5%", "-5%"]);
+
+  const heroImage = aboutData?.images?.[0] || couplePortrait;
+
+  const stats = aboutData
+    ? [
+        { value: `${aboutData.weddingsCompleted}+`, label: "Weddings" },
+        { value: `${aboutData.experienceYears}+`, label: "Years" },
+        { value: `${aboutData.destinations}+`, label: "Destinations" },
+        { value: `${aboutData.happyCouples || aboutData.weddingsCompleted}+`, label: "Happy Couples" },
+      ]
+    : [
+        { value: "500+", label: "Weddings" },
+        { value: "8+", label: "Years" },
+        { value: "50+", label: "Destinations" },
+        { value: "100%", label: "Happy Couples" },
+      ];
 
   return (
     <section ref={containerRef} className="relative py-24 md:py-32 bg-cream overflow-hidden">
@@ -34,7 +60,7 @@ const AboutSection = () => {
         style={{ y: backgroundY }}
       >
         <img
-          src={couplePortrait}
+          src={heroImage}
           alt="Background"
           className="w-full h-[120%] object-cover"
         />
@@ -52,7 +78,7 @@ const AboutSection = () => {
             <div className="relative overflow-hidden rounded-sm">
               <motion.div style={{ y: imageY, scale: imageScale }}>
                 <img
-                  src={couplePortrait}
+                  src={heroImage}
                   alt="Aura Studios team"
                   className="w-full h-[500px] object-cover shadow-elevated"
                 />
@@ -74,7 +100,7 @@ const AboutSection = () => {
               className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-background border-2 border-gold/40 flex items-center justify-center shadow-elevated"
             >
               <div className="text-center">
-                <p className="font-display text-2xl text-primary font-semibold">8+</p>
+                <p className="font-display text-2xl text-primary font-semibold">{aboutData?.experienceYears ? `${aboutData.experienceYears}+` : "8+"}</p>
                 <p className="font-body text-xs text-muted-foreground">Years</p>
               </div>
             </motion.div>

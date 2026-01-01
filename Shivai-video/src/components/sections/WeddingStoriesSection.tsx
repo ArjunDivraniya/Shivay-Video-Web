@@ -96,6 +96,7 @@ const StoryCard = ({
 const WeddingStoriesSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stories, setStories] = useState<WeddingStory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -104,11 +105,15 @@ const WeddingStoriesSection = () => {
 
   useEffect(() => {
     const fetchStories = async () => {
-      console.log('Fetching wedding stories...');
-      const data = await apiService.getStories();
-      console.log('Received stories data:', data);
-      console.log('Number of stories:', data.length);
-      setStories(data);
+      setIsLoading(true);
+      try {
+        const data = await apiService.getWeddingStories();
+        setStories(data);
+      } catch (error) {
+        console.error('Failed to load wedding stories:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchStories();
   }, []);
@@ -118,7 +123,7 @@ const WeddingStoriesSection = () => {
   // 4 cards * 85vw width = approx 340vw total width.
   // To reach the end, we shift left by approx 255vw.
   // Using `totalCards - 1` ensures we stop exactly on the last card.
-  const totalScrollVW = (stories.length - 1) * 85; 
+  const totalScrollVW = Math.max((stories.length - 1) * 85, 0); 
   
   const x = useTransform(scrollYProgress, [0, 1], ["0vw", `-${totalScrollVW}vw`]);
 
@@ -165,9 +170,14 @@ const WeddingStoriesSection = () => {
           style={{ x }}
           className="flex items-center gap-6 md:gap-16 px-6 md:px-24 w-max h-full pt-10"
         >
-          {stories.length === 0 ? (
+          {isLoading ? (
             <div className="text-ivory text-center w-full">
               <p className="font-display text-2xl">Loading wedding stories...</p>
+            </div>
+          ) : stories.length === 0 ? (
+            <div className="text-ivory text-center w-full">
+              <p className="font-display text-2xl">No wedding stories found.</p>
+              <p className="font-body text-ivory/70 mt-2">Add stories in the admin panel to see them here.</p>
             </div>
           ) : (
             stories.map((story, index) => (

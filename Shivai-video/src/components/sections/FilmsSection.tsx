@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { Play } from "lucide-react";
 import { apiService, Film } from "@/services/api";
+import weddingCeremony from "@/assets/wedding-ceremony.jpg";
 
 const VideoCard = ({ video, index }: { video: Film, index: number }) => {
   const ref = useRef(null);
@@ -30,7 +31,7 @@ const VideoCard = ({ video, index }: { video: Film, index: number }) => {
           style={{ y }}
         >
           <img
-            src={video.thumbnail}
+            src={video.thumbnail || weddingCeremony}
             alt={video.title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
