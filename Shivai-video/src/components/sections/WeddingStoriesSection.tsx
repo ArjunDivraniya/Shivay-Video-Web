@@ -92,36 +92,37 @@ const WeddingStoriesSection = () => {
 
   // GSAP ScrollTrigger Animation
   useEffect(() => {
-    if (!stories.length || isLoading || !horizontalTrackRef.current) return;
+    if (!stories.length || isLoading || !horizontalTrackRef.current || !sectionRef.current) return;
 
-    // Calculate total horizontal distance
-    const trackWidth = horizontalTrackRef.current.scrollWidth;
-    const windowWidth = window.innerWidth;
-    const horizontalDistance = trackWidth - windowWidth;
+    const ctx = gsap.context(() => {
+      // Calculate total horizontal distance
+      const trackWidth = horizontalTrackRef.current!.scrollWidth;
+      const windowWidth = window.innerWidth;
+      const horizontalDistance = trackWidth - windowWidth;
 
-    // Adjust scroll multiplier based on screen size
-    const scrollMultiplier = window.innerWidth < 768 ? 3 : 2;
+      // Mobile gets minimal multiplier to reduce empty space, desktop stays balanced
+      const scrollMultiplier = window.innerWidth < 768 ? 1.3 : 1.4;
 
-    // Create ScrollTrigger animation
-    gsap.to(horizontalTrackRef.current, {
-      x: -horizontalDistance,
-      ease: "linear",
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: "top top",
-        end: `+=${horizontalDistance * scrollMultiplier}`, // Slower on mobile
-        scrub: 1, // Smooth scrubbing with 1s delay
-        pin: true, // Pin the section
-        markers: false, // Set to true for debugging
-        onUpdate: (self) => {
-          // Optional: Add parallax or other effects here
+      // Create ScrollTrigger animation
+      gsap.to(horizontalTrackRef.current, {
+        x: -horizontalDistance,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: () => `+=${horizontalDistance * scrollMultiplier}`,
+          scrub: 0.5,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
         },
-      },
-    });
+      });
+    }, sectionRef);
 
     // Cleanup
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      ctx.revert();
     };
   }, [stories, isLoading]);
 
@@ -130,7 +131,7 @@ const WeddingStoriesSection = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#080808] z-10 min-h-screen"
+      className="relative bg-[#080808] z-10"
     >
       {/* Pinned Container */}
       <div className="relative w-full h-screen overflow-hidden bg-[#080808]">
