@@ -4,6 +4,7 @@ import Preloader from "@/components/Preloader";
 import HeroSection from "@/components/sections/HeroSection";
 import IntroSection from "@/components/sections/IntroSection";
 import WeddingStoriesSection from "@/components/sections/WeddingStoriesSection";
+import DualMarqueeGallerySection from "@/components/sections/DualMarqueeGallerySection";
 import ServicesSection from "@/components/sections/ServicesSection";
 import GallerySection from "@/components/sections/GallerySection";
 import FilmsSection from "@/components/sections/FilmsSection";
@@ -33,6 +34,9 @@ const Index = () => {
         <section id="stories">
           <WeddingStoriesSection />
         </section>
+
+        {/* Dual Marquee Gallery - Auto-scrolling category showcase */}
+        <DualMarqueeGallerySection />
 
         <section id="services">
           <ServicesSection />

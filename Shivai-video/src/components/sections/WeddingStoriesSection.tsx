@@ -130,7 +130,7 @@ const WeddingStoriesSection = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#080808] z-10"
+      className="relative bg-[#080808] z-10 min-h-screen"
     >
       {/* Pinned Container */}
       <div className="relative w-full h-screen overflow-hidden bg-[#080808]">
