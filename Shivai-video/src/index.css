@@ -129,7 +129,7 @@
 @layer base {
   html {
     /* Change from smooth to auto */
-    scroll-behavior: auto; 
+    scroll-behavior: auto !important; 
   }
 }
 @layer base {
@@ -140,7 +140,7 @@
 
  /* Update this line in index.css to 'auto' to fix the sticky lock bug */
 html {
-  scroll-behavior: auto; /* Changed from smooth */
+  scroll-behavior: auto !important;  /* Changed from smooth */
 }
 
   body {
@@ -251,5 +251,18 @@ html {
   /* Letter spacing */
   .tracking-widest-xl {
     letter-spacing: 0.25em;
+  }
+}
+
+
+@layer utilities {
+  .bg-gold {
+    background-color: hsl(43, 50%, 59%);
+  }
+  .text-gold {
+    color: hsl(43, 50%, 59%);
+  }
+  .bg-charcoal {
+    background-color: hsl(0, 0%, 10%);
   }
 }

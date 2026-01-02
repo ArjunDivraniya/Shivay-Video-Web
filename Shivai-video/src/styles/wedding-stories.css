@@ -1,0 +1,418 @@
+/* Wedding Stories Storybook Horizontal Scroll Animation */
+
+/* Smooth scroll behavior across all browsers */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Section container */
+.wedding-stories-section {
+  position: relative;
+  background-color: #080808;
+  z-index: 10;
+  overflow: visible;
+}
+
+/* Pinned horizontal scroll track */
+.wedding-stories-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #080808;
+}
+
+/* Horizontal track - moves left as you scroll down */
+.horizontal-track {
+  display: flex;
+  gap: 1.5rem;
+  width: fit-content;
+  height: 100%;
+  align-items: center;
+  padding: 0;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Story card container */
+.story-card {
+  position: relative;
+  flex-shrink: 0;
+  width: 90vw;
+  height: 100vh;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.story-card:hover {
+  transform: scale(1.02);
+}
+
+/* Story card image */
+.story-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.story-card:hover .story-card-image {
+  transform: scale(1.05);
+}
+
+/* Film grain overlay */
+.story-grain-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.03"/></svg>');
+  pointer-events: none;
+  opacity: 0.03;
+}
+
+/* Gradient overlay */
+.story-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.1));
+  pointer-events: none;
+}
+
+/* Content box */
+.story-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rem;
+  color: white;
+  z-index: 10;
+}
+
+/* Story number and type */
+.story-number {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.story-divider {
+  width: 3rem;
+  height: 1px;
+  background: linear-gradient(to right, #D4AF37, transparent);
+}
+
+.story-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.3em;
+  color: #D4AF37;
+  text-transform: uppercase;
+  font-weight: 300;
+  white-space: nowrap;
+}
+
+/* Couple name */
+.story-title {
+  font-family: "Playfair Display", serif;
+  font-size: 2.25rem;
+  color: white;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .story-title {
+    font-size: 3.75rem;
+  }
+}
+
+/* Location */
+.story-location {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 300;
+}
+
+/* Top header UI */
+.section-header {
+  position: absolute;
+  top: 2rem;
+  left: 1.5rem;
+  z-index: 50;
+}
+
+@media (min-width: 768px) {
+  .section-header {
+    top: 3rem;
+    left: 5rem;
+  }
+}
+
+.section-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.5em;
+  color: #D4AF37;
+  text-transform: uppercase;
+  font-weight: 300;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-family: "Playfair Display", serif;
+  font-size: 1.875rem;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 3.75rem;
+  }
+}
+
+.section-subtitle {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.2em;
+  margin-top: 0.5rem;
+}
+
+/* Progress indicators */
+.progress-indicators {
+  position: absolute;
+  top: 2rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  z-index: 50;
+}
+
+@media (min-width: 768px) {
+  .progress-indicators {
+    top: 3rem;
+    right: 5rem;
+  }
+}
+
+.progress-bar {
+  width: 2rem;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .progress-bar {
+    width: 3rem;
+  }
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #D4AF37, rgba(212, 175, 55, 0.5));
+  border-radius: 9999px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Bottom counter */
+.story-counter {
+  position: absolute;
+  bottom: 2rem;
+  left: 1.5rem;
+  z-index: 50;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.1em;
+}
+
+@media (min-width: 768px) {
+  .story-counter {
+    bottom: 3rem;
+    left: 5rem;
+  }
+}
+
+.story-counter-active {
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+/* Mobile scroll indicator */
+.mobile-scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  right: 1.5rem;
+  z-index: 50;
+}
+
+.bounce-animation {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+
+/* Loading state */
+.loading-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 2px solid #D4AF37;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #D4AF37;
+  letter-spacing: 0.1em;
+  font-size: 0.875rem;
+}
+
+/* Background watermark */
+.background-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.02;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.watermark-text {
+  font-size: clamp(2rem, 20vw, 20vw);
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+/* Scroll spacer for total scroll distance */
+.scroll-spacer {
+  position: relative;
+  width: 100%;
+  background-color: #080808;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .story-card {
+    width: 90vw;
+    height: 100vh;
+    border-radius: 1rem;
+  }
+
+  .story-content {
+    padding: 1.5rem;
+  }
+
+  .story-title {
+    font-size: 1.875rem;
+  }
+
+  .section-header {
+    top: 1.5rem;
+    left: 1.5rem;
+  }
+
+  .progress-indicators {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .horizontal-track {
+    gap: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .story-card {
+    width: 100vw;
+    border-radius: 0;
+  }
+
+  .story-title {
+    font-size: 1.5rem;
+  }
+
+  .story-label {
+    font-size: 0.625rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .horizontal-track {
+    gap: 0.5rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .story-card-image,
+  .story-card,
+  .progress-fill,
+  .bounce-animation {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  .wedding-stories-section {
+    background-color: #080808;
+  }
+
+  .wedding-stories-container {
+    background-color: #080808;
+  }
+}
+
+/* Print styles */
+@media print {
+  .wedding-stories-section {
+    display: none;
+  }
+}

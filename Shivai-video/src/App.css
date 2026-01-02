@@ -40,3 +40,27 @@
 .read-the-docs {
   color: #888;
 }
+
+
+/* Reset root constraints that cause horizontal scroll bugs */
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  max-width: none;
+}
+
+/* Ensure no horizontal overflow at the body level */
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: #080808;
+}
+
+/* Smooth selection color */
+::selection {
+  background: hsl(43, 50%, 59%);
+  color: white;
+}
