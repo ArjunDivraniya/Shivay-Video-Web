@@ -17,8 +17,8 @@ interface StoryCardProps {
 
 const StoryCard = ({ story, index }: StoryCardProps) => {
   return (
-    <div className="relative flex-shrink-0 w-[75vw] md:w-[60vw] lg:w-[50vw] h-[70vh] md:h-[75vh] select-none">
-      <div className="relative h-full overflow-hidden group rounded-2xl shadow-2xl">
+    <div className="relative flex-shrink-0 w-full md:w-[60vw] lg:w-[55vw] h-[60vh] md:h-[65vh] lg:h-[70vh] select-none">
+      <div className="relative h-full overflow-hidden group rounded-xl shadow-2xl">
         {/* Cover Image */}
         <img
           src={story.image || weddingCeremony}
@@ -31,25 +31,25 @@ const StoryCard = ({ story, index }: StoryCardProps) => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><filter id=%22noise%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22 /></filter><rect width=%22100%22 height=%22100%22 filter=%22url(%23noise)%22 opacity=%220.03%22/></svg>')] pointer-events-none" />
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/98 via-black/50 to-transparent" />
 
         {/* Content Box */}
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 text-white">
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white">
           {/* Story Number & Type */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-[2px] bg-gradient-to-r from-[#D4AF37] to-transparent"></div>
-            <span className="text-[11px] tracking-[0.3em] text-[#D4AF37] uppercase font-light">
+            <div className="w-10 h-[1.5px] bg-gradient-to-r from-[#D4AF37] to-transparent"></div>
+            <span className="text-[10px] md:text-[11px] tracking-[0.3em] text-[#D4AF37] uppercase font-light">
               {String(index + 1).padStart(2, "0")} — {story.event || "WEDDING"}
             </span>
           </div>
 
           {/* Couple Name - Serif Font */}
-          <h3 className="font-display text-4xl md:text-6xl text-white mb-3 italic font-light tracking-tight">
+          <h3 className="font-display text-3xl md:text-4xl lg:text-5xl text-white mb-2 italic font-light tracking-tight leading-tight">
             {story.couple}
           </h3>
 
           {/* Location */}
-          <p className="font-body text-xs md:text-sm text-white/70 uppercase tracking-[0.2em] font-light">
+          <p className="font-body text-xs md:text-sm text-white/70 uppercase tracking-[0.15em] font-light">
             📍 {story.location}
           </p>
         </div>
@@ -142,24 +142,21 @@ const WeddingStoriesSection = () => {
         </div>
 
         {/* Top Header UI */}
-        <div className="absolute top-8 md:top-12 left-6 md:left-20 flex flex-col gap-3 z-50 pointer-events-none">
-          <span className="text-[9px] md:text-[10px] tracking-[0.5em] text-[#D4AF37] uppercase font-light">
+        <div className="absolute top-6 md:top-10 lg:top-12 left-6 md:left-12 lg:left-20 flex flex-col gap-2 z-50 pointer-events-none">
+          <span className="text-[8px] md:text-[9px] lg:text-[10px] tracking-[0.5em] text-[#D4AF37] uppercase font-light">
             Portfolio
           </span>
-          <h2 className="font-display text-3xl md:text-6xl lg:text-7xl text-white tracking-tight">
-            Wedding <br className="hidden md:block" /> Stories
+          <h2 className="font-display text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-white tracking-tight whitespace-nowrap">
+            Wedding Stories
           </h2>
-          <p className="text-xs md:text-sm text-white/50 tracking-widest mt-2">
-            Scroll to explore our stories
-          </p>
         </div>
 
         {/* Progress Indicators */}
-        <div className="absolute top-8 md:top-12 right-6 md:right-20 flex gap-3 z-50">
+        <div className="absolute top-6 md:top-10 lg:top-12 right-6 md:right-12 lg:right-20 flex gap-2 md:gap-3 z-50">
           {stories.map((_, i) => (
             <div
               key={i}
-              className="w-8 md:w-12 h-[1px] bg-white/10 rounded-full overflow-hidden"
+              className="w-6 md:w-8 lg:w-10 h-[1px] bg-white/20 rounded-full overflow-hidden"
             >
               <div
                 className="h-full bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/50 rounded-full"
@@ -173,10 +170,10 @@ const WeddingStoriesSection = () => {
         </div>
 
         {/* Horizontal Scrollable Track */}
-        <div className="w-full h-full flex items-center overflow-x-hidden pt-32 md:pt-0">
+        <div className="w-full h-full flex items-center overflow-x-hidden pt-28 md:pt-0">
           <div
             ref={horizontalTrackRef}
-            className="flex gap-6 md:gap-12 px-6 md:px-20 lg:px-32 py-0"
+            className="flex gap-8 md:gap-10 lg:gap-12 px-6 md:px-8 lg:px-16 py-0"
           >
             {isLoading ? (
               <div className="w-screen h-screen flex items-center justify-center">
@@ -196,8 +193,8 @@ const WeddingStoriesSection = () => {
         </div>
 
         {/* Bottom Story Counter */}
-        <div className="absolute bottom-8 md:bottom-12 left-6 md:left-20 z-50">
-          <p className="text-xs md:text-sm text-white/50 tracking-widest">
+        <div className="absolute bottom-6 md:bottom-8 lg:bottom-10 right-6 md:right-12 lg:right-20 z-50">
+          <p className="text-xs md:text-sm text-white/60 tracking-widest font-light">
             <span className="text-[#D4AF37] font-semibold">1</span> / {stories.length}
           </p>
         </div>
