@@ -1,96 +1,12 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { Quote, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { apiService, Testimonial } from "@/services/api";
 
-// Editorial Quote Reveal Component
-const TestimonialCard = ({ testimonial, index }: { testimonial: Testimonial; index: number }) => {
-  const cardRef = useRef(null);
-  const isInView = useInView(cardRef, { once: true, margin: "-100px" });
-
-  // Split quote into lines for sequential reveal
-  const lines = testimonial.quote.split('. ').map((line, i, arr) => 
-    i < arr.length - 1 ? line + '.' : line
-  );
-
-  return (
-    <div
-      ref={cardRef}
-      className="max-w-4xl mx-auto mb-32 md:mb-40 px-4 md:px-8"
-    >
-      {/* 1️⃣ Quotation Mark - Appears First */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-        className="mb-8 md:mb-12"
-      >
-        <span className="text-6xl md:text-8xl text-gold/30 font-serif leading-none block">
-          "
-        </span>
-      </motion.div>
-
-      {/* 2️⃣ Quote Text - Line by Line Reveal */}
-      <div className="mb-8 md:mb-12">
-        {lines.map((line, lineIndex) => (
-          <motion.p
-            key={lineIndex}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{
-              duration: 0.4,
-              delay: 0.5 + lineIndex * 0.25, // Sequential delay
-              ease: "easeInOut",
-            }}
-            className="font-serif text-2xl md:text-4xl text-ivory/90 leading-relaxed mb-4 md:mb-6"
-          >
-            {line}
-          </motion.p>
-        ))}
-      </div>
-
-      {/* Optional Divider Line */}
-      <motion.div
-        initial={{ opacity: 0, scaleX: 0 }}
-        animate={isInView ? { opacity: 1, scaleX: 1 } : {}}
-        transition={{
-          duration: 0.4,
-          delay: 0.5 + lines.length * 0.25,
-          ease: "easeInOut",
-        }}
-        className="h-px w-24 bg-gold/30 mx-auto md:mx-0 mb-8"
-      />
-
-      {/* 3️⃣ Client Name & Details - Appears Last */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={isInView ? { opacity: 1 } : {}}
-        transition={{
-          duration: 0.35,
-          delay: 0.8 + lines.length * 0.25,
-          ease: "easeInOut",
-        }}
-        className="text-center md:text-left"
-      >
-        <p className="font-body text-lg md:text-xl text-gold/90 mb-2">
-          {testimonial.couple}
-        </p>
-        <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-ivory/50">
-          <span>{testimonial.event}</span>
-          {testimonial.place && (
-            <>
-              <span>•</span>
-              <span>{testimonial.place}</span>
-            </>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
 const TestimonialsSection = () => {
-  const sectionRef = useRef(null);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [activeIndex, setActiveIndex] = useState(0);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +33,17 @@ const TestimonialsSection = () => {
     };
     fetchTestimonials();
   }, []);
+
+  // Auto-swipe effect - smoothly transition every 5 seconds
+  useEffect(() => {
+    if (testimonials.length === 0 || !isInView) return;
+
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000); // 5 seconds interval
+
+    return () => clearInterval(interval);
+  }, [testimonials.length, isInView]);
 
   const nextTestimonial = () => {
     if (testimonials.length === 0) return;
@@ -170,60 +97,87 @@ const TestimonialsSection = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-hidden">
+              <div className="overflow-hidden rounded-2xl">
                 <motion.div
                   className="flex"
                   animate={{ x: `-${activeIndex * 100}%` }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 200, 
+                    damping: 35,
+                    duration: 0.8 
+                  }}
                 >
-                  {testimonials.map((testimonial) => (
+                  {testimonials.map((testimonial, index) => (
                     <div
                       key={testimonial._id}
                       className="w-full flex-shrink-0 px-4"
                     >
+                      {/* Floating Card Container */}
                       <motion.div
                         initial={{ opacity: 0, y: 30 }}
-                        animate={isInView ? { opacity: 1, y: 0 } : {}}
-                        className="text-center"
+                        animate={
+                          isInView
+                            ? {
+                                opacity: 1,
+                                y: [0, -6, 0], // Floating motion
+                              }
+                            : { opacity: 0, y: 30 }
+                        }
+                        transition={{
+                          opacity: { duration: 0.8, delay: index * 0.1 },
+                          y: {
+                            duration: 12 + index * 1.5, // Unique duration per card
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 1, // Start floating after entrance
+                          },
+                        }}
+                        className="relative bg-gradient-to-br from-charcoal/60 to-charcoal/40 border border-gold/20 rounded-2xl p-8 md:p-10 shadow-2xl backdrop-blur-sm"
                       >
-                        {/* Client Image */}
-                        {testimonial.imageUrl && (
-                          <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-6 border-2 border-gold/30 flex items-center justify-center bg-gold/10">
-                            <img
-                              src={testimonial.imageUrl}
-                              alt={testimonial.couple}
-                              className="w-full h-full object-cover"
-                            />
+                        {/* Subtle gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent pointer-events-none rounded-2xl" />
+                        
+                        <div className="relative z-10 text-center">
+                          {/* Client Image */}
+                          {testimonial.imageUrl && (
+                            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-6 border-2 border-gold/30 flex items-center justify-center bg-gold/10">
+                              <img
+                                src={testimonial.imageUrl}
+                                alt={testimonial.couple}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+
+                          {/* Quote Icon */}
+                          <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-8">
+                            <Quote className="w-8 h-8 text-gold" />
                           </div>
-                        )}
 
-                        {/* Quote Icon */}
-                        <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-8">
-                          <Quote className="w-8 h-8 text-gold" />
-                        </div>
-
-                        {/* Quote Text */}
-                        <p className="font-display text-2xl md:text-3xl text-ivory/90 italic leading-relaxed mb-8">
-                          "{testimonial.quote}"
-                        </p>
-
-                        {/* Couple Info */}
-                        <div>
-                          <p className="font-display text-xl text-gold">
-                            {testimonial.couple}
+                          {/* Quote Text */}
+                          <p className="font-display text-2xl md:text-3xl text-ivory/90 italic leading-relaxed mb-8">
+                            "{testimonial.quote}"
                           </p>
-                          <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
-                            <p className="font-body text-ivory/60 text-sm">
-                              {testimonial.event}
+
+                          {/* Couple Info */}
+                          <div>
+                            <p className="font-display text-xl text-gold">
+                              {testimonial.couple}
                             </p>
-                            {testimonial.place && (
-                              <>
-                                <span className="text-ivory/40">•</span>
-                                <p className="font-body text-ivory/60 text-sm">
-                                  {testimonial.place}
-                                </p>
-                              </>
-                            )}
+                            <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                              <p className="font-body text-ivory/60 text-sm">
+                                {testimonial.event}
+                              </p>
+                              {testimonial.place && (
+                                <>
+                                  <span className="text-ivory/40">•</span>
+                                  <p className="font-body text-ivory/60 text-sm">
+                                    {testimonial.place}
+                                  </p>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </motion.div>

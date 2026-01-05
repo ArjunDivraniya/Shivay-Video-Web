@@ -178,11 +178,18 @@ class ApiService {
 
   async getHighlightGallery(): Promise<GalleryImage[]> {
     try {
+      // Try highlight endpoint first
       const data = await this.fetchData<any[]>('/gallery/highlight');
       return data.map(this.normalizeGalleryImage);
     } catch (error) {
-      console.error('Error fetching highlight gallery:', error);
-      return [];
+      // Fallback to regular gallery and filter highlights on client side
+      try {
+        const allGallery = await this.getGallery();
+        return allGallery.filter(img => img.isHighlight);
+      } catch (fallbackError) {
+        console.error('Error fetching gallery for highlights:', fallbackError);
+        return [];
+      }
     }
   }
 
