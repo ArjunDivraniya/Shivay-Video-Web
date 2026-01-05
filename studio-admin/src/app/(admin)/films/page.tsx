@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface Film {
   _id: string;
@@ -19,7 +20,6 @@ export default function FilmsPage() {
   const [films, setFilms] = useState<Film[]>([]);
   const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Wedding Film");
@@ -32,6 +32,7 @@ export default function FilmsPage() {
   const [editServiceType, setEditServiceType] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadFilms();
@@ -68,31 +69,26 @@ export default function FilmsPage() {
       return;
     }
 
-    setUploading(true);
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/films");
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      setMessage("Uploading video...");
+      
+      const uploadData: any = await uploadFile(file, {
+        folder: "shivay-studio/films",
+        onProgress: (p) => {
+          setMessage(`Uploading video... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
+        onSuccess: () => {
+          setMessage("✓ Video uploaded successfully");
+        },
       });
 
-      if (!uploadRes.ok) {
-        const error = await uploadRes.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const uploadData = await uploadRes.json();
       setVideoUrl(uploadData.secure_url);
       setVideoPublicId(uploadData.public_id);
-      setMessage("✓ Video uploaded successfully");
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -323,6 +319,23 @@ export default function FilmsPage() {
           >
             {message}
           </p>
+        )}
+
+        {uploading && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">Uploading video...</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress.percentage}%` }}
+              >
+                {progress.percentage > 10 && `${progress.percentage}%`}
+              </div>
+            </div>
+          </div>
         )}
 
         <button

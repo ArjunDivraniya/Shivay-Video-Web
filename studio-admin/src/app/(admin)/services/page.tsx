@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface Service {
   _id: string;
@@ -50,7 +51,6 @@ const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [serviceType, setServiceType] = useState("Wedding");
@@ -62,6 +62,7 @@ export default function ServicesPage() {
   const [isActive, setIsActive] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadServices();
@@ -87,31 +88,24 @@ export default function ServicesPage() {
       return;
     }
 
-    setUploading(true);
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/services");
+      setMessage("Uploading image...");
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const uploadData: any = await uploadFile(file, {
+        folder: "shivay-studio/services",
+        onProgress: (p) => {
+          setMessage(`Uploading image... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
       });
 
-      if (!uploadRes.ok) {
-        const error = await uploadRes.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const uploadData = await uploadRes.json();
       setImageUrl(uploadData.secure_url);
       setImagePublicId(uploadData.public_id);
       setMessage("✓ Image uploaded successfully");
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -409,6 +403,23 @@ export default function ServicesPage() {
           >
             {message}
           </p>
+        )}
+
+        {uploading && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">Uploading image...</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress?.percentage || 0}%` }}
+              >
+                {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
+              </div>
+            </div>
+          </div>
         )}
 
         <button

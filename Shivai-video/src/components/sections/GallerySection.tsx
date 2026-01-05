@@ -1,174 +1,221 @@
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
-import { apiService, GalleryImage as ApiGalleryImage } from "@/services/api";
-import gallery1 from "@/assets/gallery-1.jpg";
+"use client";
 
-type GalleryImage = ApiGalleryImage & {
-  depth?: number;
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
+import { apiService, GalleryImage as ApiGalleryImage } from "@/services/api";
+
+type GalleryImage = ApiGalleryImage & { categoryKey?: string };
+
+type SlotConfig = {
+  id: string;
+  span: string;
+  category: string;
 };
 
-// Individual gallery item with parallax
-const GalleryItem = ({ 
-  image, 
-  index, 
-  scrollYProgress 
-}: { 
-  image: GalleryImage; 
-  index: number;
-  scrollYProgress: any;
-}) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-  
-  // Each image has different parallax depth
-  const depth = image.depth || 0.1;
-  const y = useTransform(
-    scrollYProgress,
-    [0, 1],
-    [`${depth * 100}%`, `-${depth * 100}%`]
-  );
-  
-  const scale = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    [1, 1 + depth * 0.5, 1]
-  );
+type SlotState = {
+  slotId: string;
+  image: GalleryImage | null;
+  version: number;
+};
 
-  // Staggered reveal delays based on position
-  const row = Math.floor(index / 4);
-  const col = index % 4;
-  const staggerDelay = (row * 0.15) + (col * 0.1);
+const SLOT_CONFIG: SlotConfig[] = [
+  { id: "slot-1", span: "col-span-2 row-span-2", category: "wedding" },
+  { id: "slot-2", span: "col-span-1 row-span-1", category: "wedding" },
+  { id: "slot-3", span: "col-span-2 row-span-1", category: "ceremony" },
+  { id: "slot-4", span: "col-span-1 row-span-2", category: "portrait" },
+  { id: "slot-5", span: "col-span-1 row-span-1", category: "prewedding" },
+  { id: "slot-6", span: "col-span-1 row-span-1", category: "wedding" },
+  { id: "slot-7", span: "col-span-2 row-span-1", category: "ceremony" },
+  { id: "slot-8", span: "col-span-1 row-span-2", category: "portrait" },
+];
 
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 60, scale: 0.9 }}
-      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ 
-        duration: 0.8, 
-        delay: staggerDelay,
-        ease: [0.25, 0.46, 0.45, 0.94]
-      }}
-      className={`group relative overflow-hidden rounded-sm cursor-pointer ${image.span || ""}`}
-    >
-      {/* Parallax image container */}
-      <motion.div 
-        className="absolute inset-0 w-full h-[120%] -top-[10%]"
-        style={{ y, scale }}
-      >
-        <motion.img
-          src={image.src || gallery1}
-          alt={image.alt}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          initial={{ filter: "blur(8px)", scale: 1.1 }}
-          animate={isInView ? { filter: "blur(0px)", scale: 1 } : {}}
-          transition={{ duration: 1, delay: staggerDelay + 0.2 }}
-        />
-      </motion.div>
+const FALLBACK_IMAGE: GalleryImage = {
+  _id: "placeholder",
+  src: "https://images.unsplash.com/photo-1520854221050-0f4caff449fb?w=900&q=80",
+  alt: "Gallery image",
+  category: "wedding",
+  categoryKey: "wedding",
+};
 
-      {/* Hover Overlay */}
-      <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition-colors duration-500" />
-
-      {/* Gold Frame on Hover */}
-      <motion.div
-        className="absolute inset-3 border border-gold/50 rounded-sm"
-        initial={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      />
-      
-      {/* Shine effect on hover */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-tr from-transparent via-ivory/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{ transform: "translateX(-100%)" }}
-        whileHover={{ transform: "translateX(100%)" }}
-        transition={{ duration: 0.6 }}
-      />
-    </motion.div>
-  );
+const CATEGORY_ALIASES: Record<string, string> = {
+  wedding: "wedding",
+  "wedding film": "wedding",
+  "wedding story": "wedding",
+  prewedding: "prewedding",
+  "pre-wedding": "prewedding",
+  couple: "prewedding",
+  ceremony: "ceremony",
+  ritual: "ceremony",
+  portrait: "portrait",
 };
 
 const GallerySection = () => {
-  const containerRef = useRef(null);
-  const headerRef = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" });
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
+  const [slotImages, setSlotImages] = useState<SlotState[]>([]);
+  const [pools, setPools] = useState<Record<string, GalleryImage[]>>({});
+  const prefersReducedMotion = useReducedMotion();
+  const isVisible = useInView(sectionRef, { margin: "-20%" });
+
+  const isMobile = typeof window !== "undefined" && window.matchMedia('(max-width: 768px)').matches;
+
+  const normalizeCategory = (value?: string) => {
+    const key = (value || "wedding").trim().toLowerCase();
+    return CATEGORY_ALIASES[key] || key || "wedding";
+  };
+
+  const pickImage = (
+    category: string,
+    currentIds: Set<string>,
+    poolMap: Record<string, GalleryImage[]>
+  ): GalleryImage => {
+    const pool = poolMap[category]?.filter((img) => !currentIds.has(img._id)) || [];
+    if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+
+    const any = Object.values(poolMap).flat().filter((img) => !currentIds.has(img._id));
+    if (any.length) return any[Math.floor(Math.random() * any.length)];
+
+    return FALLBACK_IMAGE;
+  };
 
   useEffect(() => {
     const fetchGallery = async () => {
-      const data = await apiService.getGallery();
-      // Add random depth values for parallax effect
-      const imagesWithDepth = data.map((img, index) => ({
-        ...img,
-        depth: 0.06 + (index % 5) * 0.03,
-      }));
-      setGalleryImages(imagesWithDepth);
+      try {
+        let data = await apiService.getHighlightGallery();
+        if (!data?.length) {
+          data = await apiService.getGallery();
+        }
+        const normalized: GalleryImage[] = data.map((img, index) => ({
+          ...img,
+          _id: img._id || `gallery-${index}`,
+          alt: img.alt || img.category || "Gallery image",
+          categoryKey: normalizeCategory(img.category || img.serviceType),
+        }));
+
+        const grouped = normalized.reduce<Record<string, GalleryImage[]>>((acc, img) => {
+          const key = img.categoryKey || "wedding";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(img);
+          return acc;
+        }, {});
+
+        setPools(grouped);
+
+        const currentIds = new Set<string>();
+        const initialSlots: SlotState[] = SLOT_CONFIG.map((slot, idx) => {
+          const chosen = pickImage(slot.category, currentIds, grouped);
+          currentIds.add(chosen._id);
+          return { slotId: slot.id, image: chosen, version: idx };
+        });
+        setSlotImages(initialSlots);
+      } catch (error) {
+        console.error("Failed to load gallery", error);
+        const fallbackSlots = SLOT_CONFIG.map((slot, idx) => ({
+          slotId: slot.id,
+          image: FALLBACK_IMAGE,
+          version: idx,
+        }));
+        setSlotImages(fallbackSlots);
+      }
     };
+
     fetchGallery();
   }, []);
 
-  return (
-    <section ref={containerRef} className="relative py-24 md:py-32 bg-ivory overflow-hidden">
-      {/* Floating decorative elements with parallax */}
-      <motion.div
-        className="absolute top-20 left-10 w-32 h-32 border border-gold/20 rounded-full"
-        style={{ y: useTransform(scrollYProgress, [0, 1], [0, -100]) }}
-      />
-      <motion.div
-        className="absolute bottom-40 right-20 w-24 h-24 border border-gold/15 rounded-full"
-        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 80]) }}
-      />
-      
-      <div className="container mx-auto px-6 relative z-10">
-        {/* Section Header */}
-        <motion.div
-          ref={headerRef}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
-        >
-          <motion.span 
-            className="text-sm tracking-widest-xl text-primary uppercase font-body mb-4 block"
-            initial={{ opacity: 0, y: 10 }}
-            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            Editor's Choice
-          </motion.span>
-          <motion.h2 
-            className="font-display text-4xl md:text-5xl text-charcoal mb-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            Highlight <span className="text-gold-gradient">Gallery</span>
-          </motion.h2>
-          <motion.p 
-            className="font-body text-charcoal-light max-w-xl mx-auto"
-            initial={{ opacity: 0, y: 15 }}
-            animate={isHeaderInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.3 }}
-          >
-            Curated moments that tell stories of love, joy, and celebration
-          </motion.p>
-        </motion.div>
+  useEffect(() => {
+    if (!slotImages.length) return;
+    if (!isVisible) return;
 
-        {/* Masonry Gallery with Parallax */}
+    let timer: NodeJS.Timeout | null = null;
+
+    const scheduleSwap = () => {
+      const baseMin = prefersReducedMotion ? 10000 : 8000;
+      const baseMax = prefersReducedMotion ? 12000 : 12000;
+      const delay = isMobile ? 12000 : Math.floor(Math.random() * (baseMax - baseMin + 1)) + baseMin;
+
+      timer = setTimeout(() => {
+        setSlotImages((prev) => {
+          if (!prev.length) return prev;
+
+          const targetIndex = Math.floor(Math.random() * prev.length);
+          const slot = SLOT_CONFIG[targetIndex];
+          const currentIds = new Set(prev.map((s) => s.image?._id).filter(Boolean) as string[]);
+          const nextImg = pickImage(slot.category, currentIds, pools);
+
+          const next = [...prev];
+          next[targetIndex] = {
+            ...next[targetIndex],
+            image: nextImg,
+            version: next[targetIndex].version + 1,
+          };
+          return next;
+        });
+
+        scheduleSwap();
+      }, delay);
+    };
+
+    scheduleSwap();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [slotImages.length, pools, prefersReducedMotion, isVisible, isMobile]);
+
+  const isEmpty = useMemo(() => slotImages.every((s) => !s.image), [slotImages]);
+
+  return (
+    <section ref={sectionRef} className="relative py-24 md:py-32 bg-ivory overflow-hidden">
+      <div className="container mx-auto px-6 relative z-10">
+        {/* Section Header (unchanged) */}
+        <div
+          ref={headerRef}
+          className={`text-center mb-16 transition-opacity duration-700 ${isHeaderInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
+          <span className="text-sm tracking-widest-xl text-primary uppercase font-body mb-4 block">
+            Editor's Choice
+          </span>
+          <h2 className="font-display text-4xl md:text-5xl text-charcoal mb-4">
+            Highlight <span className="text-gold-gradient">Gallery</span>
+          </h2>
+          <p className="font-body text-charcoal-light max-w-xl mx-auto">
+            Curated moments that tell stories of love, joy, and celebration
+          </p>
+        </div>
+
+        {/* Static Grid; only images swap */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-          {galleryImages.map((image, index) => (
-            <GalleryItem
-              key={image._id}
-              image={image}
-              index={index}
-              scrollYProgress={scrollYProgress}
-            />
-          ))}
+          {slotImages.map((slot, index) => {
+            const config = SLOT_CONFIG[index];
+            const image = slot.image || FALLBACK_IMAGE;
+            return (
+              <div
+                key={slot.slotId}
+                className={`relative overflow-hidden rounded-sm bg-charcoal/5 ${config.span}`}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={`${image._id}-${slot.version}`}
+                    src={image.src || FALLBACK_IMAGE.src}
+                    alt={image.alt}
+                    className="w-full h-full object-cover object-center"
+                    loading="lazy"
+                    initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 1.02 }}
+                    transition={{ duration: prefersReducedMotion ? 0.35 : 0.5, ease: "easeInOut" }}
+                  />
+                </AnimatePresence>
+              </div>
+            );
+          })}
+
+          {isEmpty && (
+            <div className="col-span-2 md:col-span-3 lg:col-span-4 h-[200px] rounded-sm bg-charcoal/5 flex items-center justify-center text-charcoal-light">
+              Loading gallery…
+            </div>
+          )}
         </div>
       </div>
     </section>

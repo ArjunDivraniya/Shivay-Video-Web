@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface Hero {
   _id: string;
@@ -12,10 +13,10 @@ interface Hero {
 export default function HeroPage() {
   const [hero, setHero] = useState<Hero | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadHero();
@@ -42,26 +43,18 @@ export default function HeroPage() {
       return;
     }
 
-    setUploading(true);
-    setMessage("");
-
     try {
-      // Upload to Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/hero");
+      setMessage("Uploading hero image...");
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const uploadData: any = await uploadFile(file, {
+        folder: "shivay-studio/hero",
+        onProgress: (p) => {
+          setMessage(`Uploading hero image... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
       });
-
-      if (!uploadRes.ok) {
-        const error = await uploadRes.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const uploadData = await uploadRes.json();
 
       // Save to database
       const dbRes = await fetch("/api/hero", {
@@ -212,9 +205,19 @@ export default function HeroPage() {
         )}
 
         {uploading && (
-          <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-            <p className="text-sm text-blue-700">Uploading hero image...</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">Uploading hero image...</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress.percentage}%` }}
+              >
+                {progress.percentage > 10 && `${progress.percentage}%`}
+              </div>
+            </div>
           </div>
         )}
       </div>

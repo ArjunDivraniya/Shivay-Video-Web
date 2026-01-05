@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface GalleryImage {
   _id: string;
@@ -18,13 +19,13 @@ export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("Wedding");
   const [serviceType, setServiceType] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadMultipleFiles } = useUpload();
 
   useEffect(() => {
     loadGallery();
@@ -56,28 +57,35 @@ export default function GalleryPage() {
   };
 
   const handleUploadImages = async (files: FileList) => {
-    setUploading(true);
-    setMessage("Uploading images...");
+    if (files.length === 0) return;
+
+    setMessage(`Uploading ${files.length} image(s)...`);
 
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
+      const fileArray = Array.from(files).filter((file) => {
         if (!file.type.startsWith("image/")) {
-          throw new Error(`${file.name} is not an image`);
+          setMessage(`✗ ${file.name} is not an image`);
+          return false;
         }
+        return true;
+      });
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", "shivay-studio/gallery");
+      if (fileArray.length === 0) return;
 
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+      const uploadedFiles = await uploadMultipleFiles(fileArray, {
+        folder: "shivay-studio/gallery",
+        onProgress: (p) => {
+          setMessage(
+            `Uploading ${p.loaded} of ${p.total} files... ${p.percentage}%`
+          );
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
+      });
 
-        if (!uploadRes.ok) throw new Error("Upload failed");
-        const uploadData = await uploadRes.json();
-
-        // Save to database
+      // Save all uploaded files to database
+      const savePromises = uploadedFiles.map(async (uploadData: any) => {
         const dbRes = await fetch("/api/gallery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,14 +101,12 @@ export default function GalleryPage() {
         return await dbRes.json();
       });
 
-      await Promise.all(uploadPromises);
-      setMessage(`✓ ${files.length} image(s) uploaded successfully!`);
+      await Promise.all(savePromises);
+      setMessage(`✓ ${uploadedFiles.length} image(s) uploaded successfully!`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadGallery();
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -247,9 +253,21 @@ export default function GalleryPage() {
         )}
 
         {uploading && (
-          <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-            <p className="text-sm text-blue-700">Uploading photos...</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">
+                Uploading {progress.loaded} of {progress.total} files...
+              </p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress.percentage}%` }}
+              >
+                {progress.percentage > 10 && `${progress.percentage}%`}
+              </div>
+            </div>
           </div>
         )}
       </div>

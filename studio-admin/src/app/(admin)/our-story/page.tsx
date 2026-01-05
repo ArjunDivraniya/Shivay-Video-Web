@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface OurStory {
   _id: string;
@@ -14,7 +15,6 @@ interface OurStory {
 export default function OurStoryPage() {
   const [ourStory, setOurStory] = useState<OurStory | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [startedYear, setStartedYear] = useState<number>(new Date().getFullYear());
   const [description, setDescription] = useState("");
@@ -22,6 +22,7 @@ export default function OurStoryPage() {
   const [imagePublicId, setImagePublicId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadOurStory();
@@ -52,32 +53,26 @@ export default function OurStoryPage() {
       return;
     }
 
-    setUploading(true);
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/our-story");
+      setMessage("Uploading image...");
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const uploadData: any = await uploadFile(file, {
+        folder: "shivay-studio/our-story",
+        onProgress: (p) => {
+          setMessage(`Uploading image... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
       });
 
-      if (!uploadRes.ok) {
-        const error = await uploadRes.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const uploadData = await uploadRes.json();
       setImageUrl(uploadData.secure_url);
       setImagePublicId(uploadData.public_id);
       setMessage("✓ Image uploaded successfully");
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
       console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
+    }
     }
   };
 
@@ -307,9 +302,19 @@ export default function OurStoryPage() {
       </form>
 
       {uploading && (
-        <div className="card p-4 flex items-center gap-3">
-          <div className="animate-spin h-5 w-5 border-2 border-[var(--primary)] border-t-transparent rounded-full" />
-          <p className="text-sm text-[var(--muted)]">Uploading image...</p>
+        <div className="card p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-[var(--primary)] border-t-transparent rounded-full" />
+            <p className="text-sm text-[var(--muted)]">Uploading image...</p>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+              style={{ width: `${progress?.percentage || 0}%` }}
+            >
+              {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
+            </div>
+          </div>
         </div>
       )}
     </div>

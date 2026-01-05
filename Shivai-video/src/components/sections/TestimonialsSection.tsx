@@ -1,23 +1,116 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { apiService, Testimonial } from "@/services/api";
 
+// Editorial Quote Reveal Component
+const TestimonialCard = ({ testimonial, index }: { testimonial: Testimonial; index: number }) => {
+  const cardRef = useRef(null);
+  const isInView = useInView(cardRef, { once: true, margin: "-100px" });
+
+  // Split quote into lines for sequential reveal
+  const lines = testimonial.quote.split('. ').map((line, i, arr) => 
+    i < arr.length - 1 ? line + '.' : line
+  );
+
+  return (
+    <div
+      ref={cardRef}
+      className="max-w-4xl mx-auto mb-32 md:mb-40 px-4 md:px-8"
+    >
+      {/* 1️⃣ Quotation Mark - Appears First */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+        className="mb-8 md:mb-12"
+      >
+        <span className="text-6xl md:text-8xl text-gold/30 font-serif leading-none block">
+          "
+        </span>
+      </motion.div>
+
+      {/* 2️⃣ Quote Text - Line by Line Reveal */}
+      <div className="mb-8 md:mb-12">
+        {lines.map((line, lineIndex) => (
+          <motion.p
+            key={lineIndex}
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{
+              duration: 0.4,
+              delay: 0.5 + lineIndex * 0.25, // Sequential delay
+              ease: "easeInOut",
+            }}
+            className="font-serif text-2xl md:text-4xl text-ivory/90 leading-relaxed mb-4 md:mb-6"
+          >
+            {line}
+          </motion.p>
+        ))}
+      </div>
+
+      {/* Optional Divider Line */}
+      <motion.div
+        initial={{ opacity: 0, scaleX: 0 }}
+        animate={isInView ? { opacity: 1, scaleX: 1 } : {}}
+        transition={{
+          duration: 0.4,
+          delay: 0.5 + lines.length * 0.25,
+          ease: "easeInOut",
+        }}
+        className="h-px w-24 bg-gold/30 mx-auto md:mx-0 mb-8"
+      />
+
+      {/* 3️⃣ Client Name & Details - Appears Last */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={isInView ? { opacity: 1 } : {}}
+        transition={{
+          duration: 0.35,
+          delay: 0.8 + lines.length * 0.25,
+          ease: "easeInOut",
+        }}
+        className="text-center md:text-left"
+      >
+        <p className="font-body text-lg md:text-xl text-gold/90 mb-2">
+          {testimonial.couple}
+        </p>
+        <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-ivory/50">
+          <span>{testimonial.event}</span>
+          {testimonial.place && (
+            <>
+              <span>•</span>
+              <span>{testimonial.place}</span>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const TestimonialsSection = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const [activeIndex, setActiveIndex] = useState(0);
+  const sectionRef = useRef(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTestimonials = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const data = await apiService.getTestimonials();
-        setTestimonials(data);
+        console.log('Testimonials fetched:', data);
+        
+        if (data && data.length > 0) {
+          setTestimonials(data);
+        } else {
+          setError('No testimonials available');
+        }
       } catch (error) {
         console.error('Failed to load testimonials:', error);
+        setError('Failed to load testimonials. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -59,9 +152,22 @@ const TestimonialsSection = () => {
         {/* Testimonials Carousel */}
         <div className="max-w-4xl mx-auto relative">
           {isLoading ? (
-            <div className="text-center text-ivory/80 font-body">Loading testimonials...</div>
-          ) : testimonials.length === 0 ? (
-            <div className="text-center text-ivory/80 font-body">No testimonials yet. Add one in the admin panel to display it here.</div>
+            <div className="text-center text-ivory/80 font-body py-12">
+              <div className="inline-block">
+                <div className="w-8 h-8 border-4 border-gold/20 border-t-gold rounded-full animate-spin"></div>
+              </div>
+              <p className="mt-4">Loading testimonials...</p>
+            </div>
+          ) : error || testimonials.length === 0 ? (
+            <div className="text-center py-12 border border-orange-500/30 rounded-lg bg-orange-500/5">
+              <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-4" />
+              <p className="text-ivory/80 font-body mb-2">
+                {error || 'No testimonials yet'}
+              </p>
+              <p className="text-ivory/60 text-sm font-body">
+                Add testimonials in the admin panel to display them here.
+              </p>
+            </div>
           ) : (
             <>
               <div className="overflow-hidden">
@@ -80,6 +186,17 @@ const TestimonialsSection = () => {
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         className="text-center"
                       >
+                        {/* Client Image */}
+                        {testimonial.imageUrl && (
+                          <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-6 border-2 border-gold/30 flex items-center justify-center bg-gold/10">
+                            <img
+                              src={testimonial.imageUrl}
+                              alt={testimonial.couple}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+
                         {/* Quote Icon */}
                         <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-8">
                           <Quote className="w-8 h-8 text-gold" />
@@ -95,9 +212,19 @@ const TestimonialsSection = () => {
                           <p className="font-display text-xl text-gold">
                             {testimonial.couple}
                           </p>
-                          <p className="font-body text-ivory/60 text-sm mt-1">
-                            {testimonial.event}
-                          </p>
+                          <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                            <p className="font-body text-ivory/60 text-sm">
+                              {testimonial.event}
+                            </p>
+                            {testimonial.place && (
+                              <>
+                                <span className="text-ivory/40">•</span>
+                                <p className="font-body text-ivory/60 text-sm">
+                                  {testimonial.place}
+                                </p>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     </div>

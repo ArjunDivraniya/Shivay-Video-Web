@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface Testimonial {
   _id: string;
@@ -14,13 +15,13 @@ interface Testimonial {
 export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [clientName, setClientName] = useState("");
   const [quote, setQuote] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageId, setImageId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadTestimonials();
@@ -42,18 +43,18 @@ export default function TestimonialsPage() {
 
   const handleUploadImage = async (file: File) => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/testimonials");
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      setMessage("Uploading image...");
+      
+      const data: any = await uploadFile(file, {
+        folder: "shivay-studio/testimonials",
+        onProgress: (p) => {
+          setMessage(`Uploading image... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage("✗ Image upload failed");
+        },
       });
 
-      if (!res.ok) throw new Error("Upload failed");
-
-      const data = await res.json();
       setImageUrl(data.secure_url);
       setImageId(data.public_id);
       setMessage("✓ Image uploaded");
@@ -228,6 +229,23 @@ export default function TestimonialsPage() {
             >
               {message}
             </p>
+          )}
+
+          {uploading && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+                <p className="text-sm text-blue-700">Uploading...</p>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                  style={{ width: `${progress?.percentage || 0}%` }}
+                >
+                  {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
+                </div>
+              </div>
+            </div>
           )}
 
           <button

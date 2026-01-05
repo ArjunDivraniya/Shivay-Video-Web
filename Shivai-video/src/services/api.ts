@@ -26,6 +26,7 @@ export interface GalleryImage {
   span?: string;
   category?: string;
   serviceType?: string;
+  isHighlight?: boolean;
 }
 
 export interface AboutData {
@@ -58,6 +59,7 @@ export interface Testimonial {
   quote: string;
   couple: string;
   event: string;
+  place?: string;
   imageUrl?: string;
 }
 
@@ -93,6 +95,7 @@ class ApiService {
     span: image?.span,
     category: image?.category,
     serviceType: image?.serviceType,
+    isHighlight: image?.isHighlight ?? image?.highlight ?? image?.galleryHighlight ?? false,
   });
 
   private normalizeAbout = (about: any): AboutData => ({
@@ -122,10 +125,11 @@ class ApiService {
 
   private normalizeTestimonial = (testimonial: any): Testimonial => ({
     _id: testimonial?._id || testimonial?.id || `testimonial-${this.makeId('testimonial')}`,
-    quote: testimonial?.quote || '',
-    couple: testimonial?.clientName || testimonial?.couple || 'Happy Couple',
-    event: testimonial?.event || testimonial?.serviceType || 'Wedding',
-    imageUrl: testimonial?.image?.url || testimonial?.imageUrl,
+    quote: testimonial?.quote || testimonial?.review || testimonial?.message || testimonial?.text || '',
+    couple: testimonial?.clientName || testimonial?.couple || testimonial?.coupleName || testimonial?.name || testimonial?.author || 'Happy Couple',
+    event: testimonial?.event || testimonial?.serviceType || testimonial?.eventType || 'Wedding',
+    place: testimonial?.place || testimonial?.location || testimonial?.city || '',
+    imageUrl: testimonial?.image?.url || testimonial?.imageUrl || testimonial?.clientImage || testimonial?.profileImage,
   });
 
   private async fetchData<T>(endpoint: string): Promise<T> {
@@ -168,6 +172,16 @@ class ApiService {
       return data.map((img, index) => this.normalizeGalleryImage(img, index));
     } catch (error) {
       console.error('Error fetching gallery:', error);
+      return [];
+    }
+  }
+
+  async getHighlightGallery(): Promise<GalleryImage[]> {
+    try {
+      const data = await this.fetchData<any[]>('/gallery/highlight');
+      return data.map(this.normalizeGalleryImage);
+    } catch (error) {
+      console.error('Error fetching highlight gallery:', error);
       return [];
     }
   }
@@ -216,14 +230,33 @@ class ApiService {
 
   async getTestimonials(): Promise<Testimonial[]> {
     try {
-      const data = await this.fetchData<any[]>('/testimonials');
+      console.log('Fetching testimonials from /reviews endpoint...');
+      const data = await this.fetchData<any[]>('/reviews');
+      console.log('Raw testimonials data:', data);
+      
       const approved = Array.isArray(data)
         ? data.filter((item) => item.approved !== false)
         : [];
-      return approved.map(this.normalizeTestimonial);
+      
+      console.log('Filtered testimonials count:', approved.length);
+      const normalized = approved.map(this.normalizeTestimonial);
+      console.log('Normalized testimonials:', normalized);
+      
+      return normalized;
     } catch (error) {
-      console.error('Error fetching testimonials:', error);
-      return [];
+      console.error('Error fetching testimonials from /reviews:', error);
+      // Fallback to /testimonials endpoint if /reviews fails
+      try {
+        console.log('Falling back to /testimonials endpoint...');
+        const fallbackData = await this.fetchData<any[]>('/testimonials');
+        const approved = Array.isArray(fallbackData)
+          ? fallbackData.filter((item) => item.approved !== false)
+          : [];
+        return approved.map(this.normalizeTestimonial);
+      } catch (fallbackError) {
+        console.error('Error fetching testimonials from /testimonials fallback:', fallbackError);
+        return [];
+      }
     }
   }
 }

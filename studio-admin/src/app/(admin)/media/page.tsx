@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useUpload } from "@/hooks/useUpload";
 
 interface MediaItem {
   _id: string;
@@ -17,13 +18,13 @@ interface MediaItem {
 export default function MediaPage() {
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("wedding");
   const [tags, setTags] = useState("");
   const [isHomepage, setIsHomepage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadMedia();
@@ -44,22 +45,18 @@ export default function MediaPage() {
   };
 
   const handleUpload = async (file: File) => {
-    setUploading(true);
-    setMessage("");
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "shivay-studio/media");
+      setMessage("Uploading media...");
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const uploadData: any = await uploadFile(file, {
+        folder: "shivay-studio/media",
+        onProgress: (p) => {
+          setMessage(`Uploading media... ${p.percentage}%`);
+        },
+        onError: (error) => {
+          setMessage(`✗ ${error}`);
+        },
       });
-
-      if (!uploadRes.ok) throw new Error("Upload failed");
-
-      const uploadData: any = await uploadRes.json();
 
       const mediaPayload = {
         type: file.type.startsWith("video/") ? "video" : "image",
@@ -89,8 +86,6 @@ export default function MediaPage() {
       loadMedia();
     } catch (error: any) {
       setMessage(`✗ ${error.message}`);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -215,6 +210,23 @@ export default function MediaPage() {
           >
             {message}
           </p>
+        )}
+
+        {uploading && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">Uploading media...</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress?.percentage || 0}%` }}
+              >
+                {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
+              </div>
+            </div>
+          </div>
         )}
 
         <button
