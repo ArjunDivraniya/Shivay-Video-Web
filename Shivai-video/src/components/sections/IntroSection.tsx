@@ -49,7 +49,7 @@ const IntroSection = () => {
                 className="font-body text-muted-foreground text-lg leading-relaxed mb-6"
               >
                 We believe every love story deserves to be told with the same magic 
-                it was lived. At Aura Studios, we don't just capture moments — we 
+                it was lived. At Shivay Video, we don't just capture moments — we 
                 preserve emotions, freeze laughter, and immortalize the fleeting 
                 glances that speak volumes.
               </motion.p>

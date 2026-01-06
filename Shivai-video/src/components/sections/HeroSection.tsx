@@ -84,7 +84,7 @@ const HeroSection = () => {
           transition={{ delay: 0.5, duration: 1 }}
           className="font-display text-5xl md:text-7xl lg:text-8xl text-ivory font-semibold mb-4 drop-shadow-lg"
         >
-          <span className="text-gold-gradient">{heroData?.studioName || "Aura"}</span> Studios
+          <span className="text-gold-gradient">{heroData?.studioName || "Shivay Video"}</span>
         </motion.h1>
 
         {/* Tagline */}

@@ -19,7 +19,7 @@ const FooterSection = () => {
         >
           {/* Logo */}
           <h3 className="font-display text-3xl md:text-4xl text-ivory mb-2">
-            <span className="text-gold-gradient">Aura</span> Studios
+            <span className="text-gold-gradient">Shivay</span> Video
           </h3>
           <p className="font-body text-ivory/60 text-sm italic">
             Capturing emotions, one frame at a time
@@ -49,11 +49,11 @@ const FooterSection = () => {
             +91 98765 43210
           </a>
           <a
-            href="mailto:hello@aurastudios.in"
+            href="mailto:hello@shivayvideo.com"
             className="flex items-center gap-2 font-body text-sm hover:text-gold transition-colors"
           >
             <Mail className="w-4 h-4 text-gold" />
-            hello@aurastudios.in
+            hello@shivayvideo.com
           </a>
         </motion.div>
 
@@ -92,7 +92,7 @@ const FooterSection = () => {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-center font-body text-ivory/40 text-sm"
         >
-          © {currentYear} Aura Studios. All rights reserved.
+          © {currentYear} Shivay Video. All rights reserved.
         </motion.p>
       </div>
     </footer>

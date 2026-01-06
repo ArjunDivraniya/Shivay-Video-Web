@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const SESSION_KEY = "aura-album-intro-played";
+const SESSION_KEY = "shivay-video-album-intro-played";
 const AUTO_TRIGGER_MS = 1200;
 const INVITE_FADE_MS = 200;
 const SOFT_EASE: [number, number, number, number] = [0.33, 0, 0.2, 1];
@@ -240,7 +240,7 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
                     transition={{ duration: 0.6, ease: SOFT_EASE, delay: 0.1 }}
                     className="text-[#3f3225]"
                   >
-                    <p className="text-[10px] md:text-xs tracking-[0.42em] uppercase font-light">Aura Studios</p>
+                    <p className="text-[10px] md:text-xs tracking-[0.42em] uppercase font-light">Shivay Video</p>
                     <h1 className="mt-3 text-3xl md:text-4xl font-display font-semibold tracking-tight">Wedding Portfolio</h1>
                     <p className="mt-3 text-sm md:text-base text-[#6a5947] italic">A quiet opening to the story</p>
                   </motion.div>

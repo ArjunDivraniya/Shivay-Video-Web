@@ -51,7 +51,7 @@ const Header = () => {
             onClick={() => scrollToSection("#home")}
             className="font-display text-2xl text-ivory"
           >
-            <span className="text-gold-gradient">Aura</span> Studios
+            <span className="text-gold-gradient">Shivay</span> Video
           </button>
 
           {/* Desktop Navigation */}

@@ -79,7 +79,7 @@ const AboutSection = () => {
               <motion.div style={{ y: imageY, scale: imageScale }}>
                 <img
                   src={heroImage}
-                  alt="Aura Studios team"
+                  alt="Shivay Video team"
                   className="w-full h-[500px] object-cover shadow-elevated"
                 />
               </motion.div>
@@ -119,12 +119,12 @@ const AboutSection = () => {
             <h2 className="font-display text-4xl md:text-5xl text-charcoal mb-6">
               The Heart Behind
               <br />
-              <span className="text-gold-gradient">Aura Studios</span>
+              <span className="text-gold-gradient">Shivay Video</span>
             </h2>
 
             <div className="space-y-4 mb-8">
               <p className="font-body text-charcoal-light leading-relaxed">
-                Founded in Junagadh, Gujarat, Aura Studios has been weaving visual 
+                Founded in Junagadh, Gujarat, Shivay Video has been weaving visual 
                 stories of love and celebration for over 8 years. What started as a 
                 passion for capturing genuine emotions has grown into a trusted name 
                 in wedding and event photography.
