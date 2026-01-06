@@ -1,66 +1,91 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SESSION_KEY = "aura-album-intro-played";
-const INTRO_TOTAL_MS = 1400;
-const AUTO_TRIGGER_MS = 1500;
-const EASE_CUBIC: [number, number, number, number] = [0.42, 0, 0.58, 1];
+const AUTO_TRIGGER_MS = 1200;
+const INVITE_FADE_MS = 200;
+const SOFT_EASE: [number, number, number, number] = [0.33, 0, 0.2, 1];
 
 interface AlbumIntroOverlayProps {
   isReady: boolean;
 }
 
+type Phase = "idle" | "revealing";
+
 const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
   const [visible, setVisible] = useState(false);
-  const [opening, setOpening] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
   const [isTouch, setIsTouch] = useState(false);
   const [prefersReduced, setPrefersReduced] = useState(false);
+  const [useFadeOnly, setUseFadeOnly] = useState(false);
+  const phaseRef = useRef<Phase>("idle");
+  const timersRef = useRef<number[]>([]);
 
-  // Determine motion preference and input type
   useEffect(() => {
     const touch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     setIsTouch(touch);
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+    const handler = (event: MediaQueryListEvent) => setPrefersReduced(event.matches);
     mq.addEventListener("change", handler);
+
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  useEffect(() => {
+    const lowPerf = typeof navigator !== "undefined" && "deviceMemory" in navigator && Number((navigator as any).deviceMemory) <= 4;
+    setUseFadeOnly(prefersReduced || lowPerf);
+  }, [prefersReduced]);
+
+  const revealDuration = useMemo(() => (useFadeOnly ? 280 : isTouch ? 620 : 700), [useFadeOnly, isTouch]);
+  const settleDuration = useMemo(() => (useFadeOnly ? 140 : 220), [useFadeOnly]);
 
   const markSeen = useCallback(() => {
     try {
       sessionStorage.setItem(SESSION_KEY, "1");
-    } catch (e) {
+    } catch (error) {
       // sessionStorage may be unavailable; fail silently
     }
   }, []);
 
-  const startIntro = useCallback(() => {
-    if (opening) return;
-    setVisible(true);
-    setOpening(true);
-    markSeen();
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach((id) => clearTimeout(id));
+    timersRef.current = [];
+  }, []);
 
-    setTimeout(() => {
+  const startReveal = useCallback(() => {
+    if (phaseRef.current === "revealing") return;
+
+    markSeen();
+    setVisible(true);
+    setPhase("revealing");
+    phaseRef.current = "revealing";
+
+    const timer = window.setTimeout(() => {
       setVisible(false);
-    }, INTRO_TOTAL_MS);
-  }, [markSeen, opening]);
+      setPhase("idle");
+      phaseRef.current = "idle";
+    }, revealDuration + settleDuration + 150);
+
+    timersRef.current.push(timer);
+  }, [markSeen, revealDuration, settleDuration]);
 
   const skipIntro = useCallback(() => {
     markSeen();
-    setOpening(false);
+    clearTimers();
     setVisible(false);
-  }, [markSeen]);
+    setPhase("idle");
+    phaseRef.current = "idle";
+  }, [markSeen, clearTimers]);
 
-  // Setup once-per-session visibility and triggers
   useEffect(() => {
     if (!isReady) return;
 
     const alreadySeen = (() => {
       try {
         return sessionStorage.getItem(SESSION_KEY) === "1";
-      } catch (e) {
+      } catch (error) {
         return false;
       }
     })();
@@ -73,179 +98,167 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
 
     setVisible(true);
 
-    const autoTimer = setTimeout(() => startIntro(), AUTO_TRIGGER_MS);
+    const autoTimer = window.setTimeout(() => startReveal(), AUTO_TRIGGER_MS);
+    timersRef.current.push(autoTimer);
 
-    const triggerOnce = () => startIntro();
-    window.addEventListener("scroll", triggerOnce, { once: true, passive: true });
-    window.addEventListener("touchstart", triggerOnce, { once: true, passive: true });
-    window.addEventListener("keydown", triggerOnce, { once: true });
-    window.addEventListener("mousedown", triggerOnce, { once: true });
+    const trigger = () => startReveal();
+    window.addEventListener("scroll", trigger, { once: true, passive: true });
+    window.addEventListener("touchstart", trigger, { once: true, passive: true });
+    window.addEventListener("keydown", trigger, { once: true });
+    window.addEventListener("mousedown", trigger, { once: true });
 
     return () => {
-      clearTimeout(autoTimer);
-      window.removeEventListener("scroll", triggerOnce);
-      window.removeEventListener("touchstart", triggerOnce);
-      window.removeEventListener("keydown", triggerOnce);
-      window.removeEventListener("mousedown", triggerOnce);
+      clearTimers();
+      window.removeEventListener("scroll", trigger);
+      window.removeEventListener("touchstart", trigger);
+      window.removeEventListener("keydown", trigger);
+      window.removeEventListener("mousedown", trigger);
     };
-  }, [isReady, prefersReduced, startIntro, markSeen]);
+  }, [isReady, prefersReduced, startReveal, markSeen, clearTimers]);
 
   const coverVariants = useMemo(
     () => ({
-      closed: { 
-        rotateY: 0, 
+      idle: {
         x: "0%",
         opacity: 1,
-        transition: { duration: 0.5, ease: EASE_CUBIC }
+        transition: { duration: 0.4, ease: SOFT_EASE },
       },
-      opening: {
-        rotateY: -95,
-        x: "-45%",
-        opacity: 0.3,
-        transition: { duration: 0.85, ease: EASE_CUBIC },
-      },
+      revealing: useFadeOnly
+        ? {
+            opacity: 0,
+            scale: 0.98,
+            transition: { duration: revealDuration / 1000, ease: SOFT_EASE },
+          }
+        : {
+            x: "46%",
+            opacity: 0.06,
+            transition: { duration: revealDuration / 1000, ease: SOFT_EASE },
+          },
     }),
-    []
+    [revealDuration, useFadeOnly]
   );
 
-  const pageRevealVariants = useMemo(
+  const maskVariants = useMemo(
     () => ({
-      hidden: { 
-        opacity: 0, 
-        scale: 0.95,
-        transition: { duration: 0.3, ease: EASE_CUBIC }
+      idle: {
+        clipPath: "inset(0% 0% 0% 0% round 32px)",
+        opacity: 0.95,
+        transition: { duration: INVITE_FADE_MS / 1000, ease: SOFT_EASE },
       },
-      visible: {
-        opacity: 1,
-        scale: 1,
-        transition: { duration: 0.5, ease: EASE_CUBIC, delay: 0.2 },
+      revealing: {
+        clipPath: useFadeOnly ? "inset(0% 0% 0% 0% round 32px)" : "inset(0% 100% 0% 0% round 32px)",
+        opacity: useFadeOnly ? 0 : 0.7,
+        transition: { duration: revealDuration / 1000, ease: SOFT_EASE },
       },
     }),
-    []
+    [revealDuration, useFadeOnly]
   );
 
-  const heroFadeVariants = useMemo(
+  const veilVariants = useMemo(
     () => ({
-      hidden: { 
+      idle: { opacity: 0.7 },
+      revealing: {
         opacity: 0,
-        transition: { duration: 0.2, ease: EASE_CUBIC }
+        transition: { duration: settleDuration / 1000, ease: SOFT_EASE, delay: revealDuration / 1000 - 0.15 },
       },
-      visible: {
-        opacity: 1,
-        transition: { duration: 0.4, ease: EASE_CUBIC, delay: 0.5 },
-      },
+    }),
+    [revealDuration, settleDuration]
+  );
+
+  const promptVariants = useMemo(
+    () => ({
+      idle: { opacity: 0.9, y: 0 },
+      revealing: { opacity: 0, y: -6, transition: { duration: INVITE_FADE_MS / 1000 } },
     }),
     []
   );
 
-  const prompt = isTouch ? "Tap to open our story" : "Scroll to begin";
+  const prompt = isTouch ? "Tap to open" : "Scroll to open";
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
+          key="album-intro"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: "easeInOut" }}
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#f8f5ef] text-charcoal"
+          transition={{ duration: settleDuration / 1000, ease: SOFT_EASE }}
+          className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none"
         >
-          {/* Ambient backdrop */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#f3eee3] via-[#f7f2e9] to-[#efe7d8]" />
-            <div className="absolute inset-0 mix-blend-multiply opacity-[0.08] bg-[radial-gradient(circle_at_20%_20%,rgba(0,0,0,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(0,0,0,0.05),transparent_32%)]" />
-          </div>
+          <motion.div
+            variants={veilVariants}
+            initial="idle"
+            animate={phase}
+            className="absolute inset-0 bg-gradient-to-br from-[#f8f4eb] via-[#f3ece0] to-[#ece1d0]"
+            aria-hidden
+          />
 
-          {/* Skip */}
+          <div className="absolute inset-0 mix-blend-multiply opacity-10 bg-[radial-gradient(circle_at_20%_20%,rgba(0,0,0,0.08),transparent_38%),radial-gradient(circle_at_80%_0%,rgba(0,0,0,0.06),transparent_32%)]" aria-hidden />
+
           <button
             onClick={skipIntro}
-            className="absolute top-6 right-6 text-xs tracking-[0.2em] uppercase text-[#6b5b4b] bg-white/60 backdrop-blur-sm border border-[#d9cbb4]/60 rounded-full px-4 py-2 hover:bg-white shadow-sm transition"
+            className="pointer-events-auto absolute top-6 right-6 text-[11px] tracking-[0.28em] uppercase text-[#6d5d4c] bg-white/70 backdrop-blur-sm border border-[#d8cbb6]/70 rounded-full px-4 py-2 hover:bg-white shadow-sm transition"
             aria-label="Skip intro"
           >
             Skip intro
           </button>
 
-          <div className="relative w-full max-w-5xl px-6" style={{ perspective: "2000px", perspectiveOrigin: "center center" }}>
-            {/* Prompt */}
+          <div className="relative w-full max-w-5xl px-6 pointer-events-auto">
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: opening ? 0 : 0.9, y: opening ? -6 : 0 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="absolute -top-12 left-0 right-0 mx-auto w-max text-[11px] md:text-xs tracking-[0.32em] text-[#7a6956] uppercase font-light z-10"
+              variants={promptVariants}
+              initial="idle"
+              animate={phase}
+              className="absolute -top-12 left-0 right-0 mx-auto w-max text-[11px] md:text-xs tracking-[0.32em] text-[#7a6956] uppercase font-light"
             >
-              {prompt}
+              {prompt} · Begin the story
             </motion.div>
 
             <div className="relative aspect-[3/2] max-h-[78vh] mx-auto">
-              {/* Inner page that becomes the hero reveal */}
               <motion.div
-                variants={pageRevealVariants}
-                initial="hidden"
-                animate={opening ? "visible" : "hidden"}
-                className="absolute inset-3 md:inset-6 rounded-[24px] bg-gradient-to-br from-white via-[#f8f4ec] to-[#efe7d9] shadow-[0_25px_80px_rgba(0,0,0,0.08)] overflow-hidden z-10"
-              >
-                <motion.div
-                  variants={heroFadeVariants}
-                  initial="hidden"
-                  animate={opening ? "visible" : "hidden"}
-                  className="absolute inset-0"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/0 to-black/25" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(0,0,0,0.07),transparent_32%),radial-gradient(circle_at_70%_10%,rgba(0,0,0,0.05),transparent_28%)] opacity-30" />
-                </motion.div>
+                variants={maskVariants}
+                initial="idle"
+                animate={phase}
+                className="absolute inset-2 md:inset-5 rounded-[28px] bg-[#f6f1e7]/85 backdrop-blur-[1px] shadow-[0_28px_80px_rgba(0,0,0,0.12)]"
+                aria-hidden
+              />
 
-                {/* Minimal interior text */}
-                <div className="absolute left-0 right-0 top-10 md:top-14 text-center text-[#514433]">
-                  <p className="text-[10px] md:text-xs tracking-[0.4em] uppercase font-light">Wedding Portfolio</p>
-                  <p className="mt-2 text-xl md:text-2xl font-display italic text-[#3e3226]">The day their story began</p>
-                </div>
-              </motion.div>
-
-              {/* Album cover */}
               <motion.button
                 aria-label={prompt}
-                onClick={startIntro}
+                onClick={startReveal}
                 variants={coverVariants}
-                initial="closed"
-                animate={opening ? "opening" : "closed"}
-                className="absolute inset-0 rounded-[28px] md:rounded-[32px] bg-gradient-to-br from-[#f2eadb] via-[#ede2d0] to-[#e5d6bf] border border-white/60 shadow-[0_28px_70px_rgba(0,0,0,0.28)] overflow-hidden origin-left z-20"
-                style={{ 
-                  transformStyle: "preserve-3d",
-                  backfaceVisibility: "hidden"
-                }}
+                initial="idle"
+                animate={phase}
+                className="absolute inset-0 rounded-[30px] bg-gradient-to-br from-[#f2ebdc] via-[#ecdfcb] to-[#e6d7c1] border border-white/70 shadow-[0_32px_90px_rgba(0,0,0,0.22)] overflow-hidden text-center"
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.5),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(0,0,0,0.05),transparent_36%)]" />
-                <div className="absolute inset-0" aria-hidden>
-                  <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.35)_0%,rgba(255,255,255,0.05)_35%,rgba(0,0,0,0.04)_100%)]" />
-                  <div className="absolute inset-0 opacity-50 mix-blend-multiply bg-[radial-gradient(circle_at_20%_30%,rgba(0,0,0,0.08),transparent_35%)]" />
-                </div>
-                <div className="relative z-10 flex h-full w-full flex-col items-center justify-center text-center px-6">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.45),transparent_42%),radial-gradient(circle_at_75%_10%,rgba(0,0,0,0.05),transparent_36%)]" aria-hidden />
+                <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent via-white/65 to-white/0" aria-hidden />
+                <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-4 px-8">
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="text-[#403225]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, ease: SOFT_EASE, delay: 0.1 }}
+                    className="text-[#3f3225]"
                   >
-                    <p className="text-[10px] md:text-xs tracking-[0.42em] uppercase font-light mb-3">Aura Studios</p>
-                    <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">Wedding Album</h1>
-                    <p className="mt-3 text-sm md:text-base text-[#6a5a48] italic">Opening the pages of their forever</p>
+                    <p className="text-[10px] md:text-xs tracking-[0.42em] uppercase font-light">Aura Studios</p>
+                    <h1 className="mt-3 text-3xl md:text-4xl font-display font-semibold tracking-tight">Wedding Portfolio</h1>
+                    <p className="mt-3 text-sm md:text-base text-[#6a5947] italic">A quiet opening to the story</p>
                   </motion.div>
 
-                  <div className="mt-6 h-px w-24 bg-gradient-to-r from-transparent via-[#9b846a] to-transparent" />
+                  <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9b846a] to-transparent" />
 
                   <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: opening ? 0 : 0.65 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-6 text-[11px] tracking-[0.32em] uppercase text-[#7a6956]"
+                    animate={{ opacity: phase === "idle" ? 0.65 : 0 }}
+                    transition={{ duration: INVITE_FADE_MS / 1000, ease: SOFT_EASE }}
+                    className="text-[11px] tracking-[0.32em] uppercase text-[#7a6956]"
                   >
                     {prompt}
                   </motion.div>
                 </div>
               </motion.button>
 
-              {/* Subtle desk shadow */}
-              <div className="absolute -bottom-10 left-8 right-8 h-10 blur-3xl bg-black/10 rounded-full" />
+              <div className="absolute -bottom-10 left-10 right-10 h-10 blur-3xl bg-black/10 rounded-full" aria-hidden />
             </div>
           </div>
         </motion.div>
