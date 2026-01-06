@@ -92,12 +92,17 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
 
   const coverVariants = useMemo(
     () => ({
-      idle: { rotateY: 0, x: 0, boxShadow: "0 25px 60px rgba(0,0,0,0.25)" },
+      closed: { 
+        rotateY: 0, 
+        x: "0%",
+        opacity: 1,
+        transition: { duration: 0.5, ease: EASE_CUBIC }
+      },
       opening: {
-        rotateY: -98,
-        x: -46,
-        boxShadow: "0 18px 45px rgba(0,0,0,0.2)",
-        transition: { duration: 0.82, ease: EASE_CUBIC },
+        rotateY: -95,
+        x: "-45%",
+        opacity: 0.3,
+        transition: { duration: 0.85, ease: EASE_CUBIC },
       },
     }),
     []
@@ -105,11 +110,15 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
 
   const pageRevealVariants = useMemo(
     () => ({
-      idle: { opacity: 0, scale: 0.98 },
-      opening: {
+      hidden: { 
+        opacity: 0, 
+        scale: 0.95,
+        transition: { duration: 0.3, ease: EASE_CUBIC }
+      },
+      visible: {
         opacity: 1,
         scale: 1,
-        transition: { duration: 0.45, ease: EASE_CUBIC, delay: 0.15 },
+        transition: { duration: 0.5, ease: EASE_CUBIC, delay: 0.2 },
       },
     }),
     []
@@ -117,10 +126,13 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
 
   const heroFadeVariants = useMemo(
     () => ({
-      idle: { opacity: 0 },
-      opening: {
+      hidden: { 
+        opacity: 0,
+        transition: { duration: 0.2, ease: EASE_CUBIC }
+      },
+      visible: {
         opacity: 1,
-        transition: { duration: 0.35, ease: EASE_CUBIC, delay: 0.65 },
+        transition: { duration: 0.4, ease: EASE_CUBIC, delay: 0.5 },
       },
     }),
     []
@@ -153,13 +165,13 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
             Skip intro
           </button>
 
-          <div className="relative w-full max-w-5xl px-6" style={{ perspective: 1400 }}>
+          <div className="relative w-full max-w-5xl px-6" style={{ perspective: "2000px", perspectiveOrigin: "center center" }}>
             {/* Prompt */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: opening ? 0 : 0.9, y: opening ? -6 : 0 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="absolute -top-12 left-0 right-0 mx-auto w-max text-[11px] md:text-xs tracking-[0.32em] text-[#7a6956] uppercase font-light"
+              className="absolute -top-12 left-0 right-0 mx-auto w-max text-[11px] md:text-xs tracking-[0.32em] text-[#7a6956] uppercase font-light z-10"
             >
               {prompt}
             </motion.div>
@@ -168,14 +180,14 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
               {/* Inner page that becomes the hero reveal */}
               <motion.div
                 variants={pageRevealVariants}
-                initial="idle"
-                animate={opening ? "opening" : "idle"}
-                className="absolute inset-3 md:inset-6 rounded-[24px] bg-gradient-to-br from-white via-[#f8f4ec] to-[#efe7d9] shadow-[0_25px_80px_rgba(0,0,0,0.08)] overflow-hidden"
+                initial="hidden"
+                animate={opening ? "visible" : "hidden"}
+                className="absolute inset-3 md:inset-6 rounded-[24px] bg-gradient-to-br from-white via-[#f8f4ec] to-[#efe7d9] shadow-[0_25px_80px_rgba(0,0,0,0.08)] overflow-hidden z-10"
               >
                 <motion.div
                   variants={heroFadeVariants}
-                  initial="idle"
-                  animate={opening ? "opening" : "idle"}
+                  initial="hidden"
+                  animate={opening ? "visible" : "hidden"}
                   className="absolute inset-0"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/0 to-black/25" />
@@ -194,10 +206,13 @@ const AlbumIntroOverlay = ({ isReady }: AlbumIntroOverlayProps) => {
                 aria-label={prompt}
                 onClick={startIntro}
                 variants={coverVariants}
-                initial="idle"
-                animate={opening ? "opening" : "idle"}
-                className="absolute inset-0 rounded-[28px] md:rounded-[32px] bg-gradient-to-br from-[#f2eadb] via-[#ede2d0] to-[#e5d6bf] border border-white/60 shadow-[0_28px_70px_rgba(0,0,0,0.28)] overflow-hidden origin-left"
-                style={{ transformStyle: "preserve-3d" }}
+                initial="closed"
+                animate={opening ? "opening" : "closed"}
+                className="absolute inset-0 rounded-[28px] md:rounded-[32px] bg-gradient-to-br from-[#f2eadb] via-[#ede2d0] to-[#e5d6bf] border border-white/60 shadow-[0_28px_70px_rgba(0,0,0,0.28)] overflow-hidden origin-left z-20"
+                style={{ 
+                  transformStyle: "preserve-3d",
+                  backfaceVisibility: "hidden"
+                }}
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.5),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(0,0,0,0.05),transparent_36%)]" />
                 <div className="absolute inset-0" aria-hidden>
