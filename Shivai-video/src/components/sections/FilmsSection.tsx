@@ -94,17 +94,14 @@ const FilmsSection = () => {
   // Handle user interaction - pause temporarily
   const handleUserInteraction = useCallback(() => {
     setUserInteracted(true);
-    setIsPaused(true);
     
     // Clear existing pause timeout
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
     }
     
-    // Resume after one cycle if user doesn't interact again
-    pauseTimeoutRef.current = setTimeout(() => {
-      setIsPaused(false);
-    }, AUTOPLAY_DURATION);
+    // Don't set isPaused to true - just reset the timer
+    // The timer will be reset by the useEffect watching currentIndex
   }, []);
 
   // TV screen glow pulse effect
