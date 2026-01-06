@@ -454,7 +454,6 @@ const FilmsSection = () => {
                   goToPrevious();
                   handleUserInteraction();
                 }}
-                disabled={isTransitioning}
                 className="p-4 rounded-full bg-white shadow-lg hover:shadow-xl border border-gray-200 hover:border-[#D4AF37]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 aria-label="Previous film"
                 disabled={!hasFilms || isTransitioning}
@@ -483,7 +482,6 @@ const FilmsSection = () => {
                   goToNext();
                   handleUserInteraction();
                 }}
-                disabled={isTransitioning}
                 className="p-4 rounded-full bg-white shadow-lg hover:shadow-xl border border-gray-200 hover:border-[#D4AF37]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 aria-label="Next film"
                 disabled={!hasFilms || isTransitioning}

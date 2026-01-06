@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Preloader from "@/components/Preloader";
+import AlbumIntroOverlay from "@/components/AlbumIntroOverlay";
 import HeroSection from "@/components/sections/HeroSection";
 import IntroSection from "@/components/sections/IntroSection";
 import WeddingStoriesSection from "@/components/sections/WeddingStoriesSection";
@@ -21,6 +22,9 @@ const Index = () => {
   return (
     <>
       {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
+
+      {/* Storybook / album opening intro (plays once per session) */}
+      <AlbumIntroOverlay isReady={!isLoading} />
       
       <main className={`overflow-x-hidden ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-500`}>
         <Header />
