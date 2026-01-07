@@ -64,6 +64,28 @@ export interface Testimonial {
 }
 
 class ApiService {
+  private unwrapPayload = (payload: any) => {
+    if (payload && typeof payload === 'object') {
+      if ('value' in payload) return payload.value;
+      if ('data' in payload) return payload.data;
+      if ('results' in payload) return payload.results;
+      if ('items' in payload) return payload.items;
+    }
+    return payload;
+  };
+
+  private asArray = (payload: any): any[] => {
+    const unwrapped = this.unwrapPayload(payload);
+    if (Array.isArray(unwrapped)) return unwrapped;
+    return [];
+  };
+
+  private asObject = (payload: any): any => {
+    const unwrapped = this.unwrapPayload(payload);
+    if (Array.isArray(unwrapped)) return unwrapped[0] ?? null;
+    return unwrapped ?? null;
+  };
+
   private makeId = (prefix: string) =>
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
@@ -149,7 +171,8 @@ class ApiService {
   async getHeroData(): Promise<HeroData | null> {
     try {
       const data = await this.fetchData<any>('/hero');
-      return this.normalizeHero(data);
+      const hero = this.asObject(data);
+      return hero ? this.normalizeHero(hero) : null;
     } catch (error) {
       console.error('Error fetching hero data:', error);
       return null;
@@ -158,7 +181,8 @@ class ApiService {
 
   async getServices(): Promise<Service[]> {
     try {
-      const data = await this.fetchData<any[]>('/services');
+      const raw = await this.fetchData<any>('/services');
+      const data = this.asArray(raw);
       return data.map(this.normalizeService);
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -168,7 +192,8 @@ class ApiService {
 
   async getGallery(): Promise<GalleryImage[]> {
     try {
-      const data = await this.fetchData<any[]>('/gallery');
+      const raw = await this.fetchData<any>('/gallery');
+      const data = this.asArray(raw);
       return data.map((img, index) => this.normalizeGalleryImage(img, index));
     } catch (error) {
       console.error('Error fetching gallery:', error);
@@ -179,7 +204,8 @@ class ApiService {
   async getHighlightGallery(): Promise<GalleryImage[]> {
     try {
       // Try highlight endpoint first
-      const data = await this.fetchData<any[]>('/gallery/highlight');
+      const raw = await this.fetchData<any>('/gallery/highlight');
+      const data = this.asArray(raw);
       return data.map(this.normalizeGalleryImage);
     } catch (error) {
       // Fallback to regular gallery and filter highlights on client side
@@ -195,8 +221,9 @@ class ApiService {
 
   async getAbout(): Promise<AboutData | null> {
     try {
-      const data = await this.fetchData<any>('/about');
-      return this.normalizeAbout(data);
+      const raw = await this.fetchData<any>('/about');
+      const data = this.asObject(raw);
+      return data ? this.normalizeAbout(data) : null;
     } catch (error) {
       console.error('Error fetching about stats:', error);
       return null;
@@ -205,12 +232,14 @@ class ApiService {
 
   async getWeddingStories(): Promise<WeddingStory[]> {
     try {
-      const data = await this.fetchData<any[]>('/weddings');
+      const raw = await this.fetchData<any>('/weddings');
+      const data = this.asArray(raw);
       return data.map(this.normalizeWeddingStory);
     } catch (primaryError) {
       console.error('Error fetching weddings, falling back to /stories:', primaryError);
       try {
-        const fallback = await this.fetchData<any[]>('/stories');
+        const fallbackRaw = await this.fetchData<any>('/stories');
+        const fallback = this.asArray(fallbackRaw);
         console.log('API Response for stories:', fallback);
         console.log('Number of stories:', Array.isArray(fallback) ? fallback.length : 0);
         return fallback.map(this.normalizeWeddingStory);
@@ -227,7 +256,8 @@ class ApiService {
 
   async getFilms(): Promise<Film[]> {
     try {
-      const data = await this.fetchData<any[]>('/films');
+      const raw = await this.fetchData<any>('/films');
+      const data = this.asArray(raw);
       return data.map(this.normalizeFilm);
     } catch (error) {
       console.error('Error fetching films:', error);
@@ -238,7 +268,8 @@ class ApiService {
   async getTestimonials(): Promise<Testimonial[]> {
     try {
       console.log('Fetching testimonials from /reviews endpoint...');
-      const data = await this.fetchData<any[]>('/reviews');
+      const raw = await this.fetchData<any>('/reviews');
+      const data = this.asArray(raw);
       console.log('Raw testimonials data:', data);
       
       const approved = Array.isArray(data)
@@ -255,7 +286,8 @@ class ApiService {
       // Fallback to /testimonials endpoint if /reviews fails
       try {
         console.log('Falling back to /testimonials endpoint...');
-        const fallbackData = await this.fetchData<any[]>('/testimonials');
+        const fallbackRaw = await this.fetchData<any>('/testimonials');
+        const fallbackData = this.asArray(fallbackRaw);
         const approved = Array.isArray(fallbackData)
           ? fallbackData.filter((item) => item.approved !== false)
           : [];
