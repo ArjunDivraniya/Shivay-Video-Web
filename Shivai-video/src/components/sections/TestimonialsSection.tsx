@@ -54,6 +54,7 @@ const TestimonialsSection = () => {
     if (testimonials.length === 0) return;
     setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
+  console.log(testimonials)
 
   return (
     <section ref={ref} className="relative py-24 md:py-32 bg-charcoal overflow-hidden">

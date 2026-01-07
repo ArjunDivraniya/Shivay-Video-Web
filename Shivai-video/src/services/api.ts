@@ -4,6 +4,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api');
 
+console.log("Current API URL:", API_BASE_URL);
 export interface HeroData {
   studioName?: string;
   tagline?: string;
