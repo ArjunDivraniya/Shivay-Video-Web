@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-   "build": "next build --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -12,6 +12,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "jose": "^6.1.3",
     "jsonwebtoken": "^9.0.2",
