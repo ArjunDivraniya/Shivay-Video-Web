@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useUpload } from "@/hooks/useUpload";
 
 interface StoryFormData {
   title: string;
@@ -28,11 +27,11 @@ const emptyStory: StoryFormData = {
 export default function StoriesPage() {
   const [form, setForm] = useState<StoryFormData>(emptyStory);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [stories, setStories] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
-  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadStories();
@@ -50,29 +49,32 @@ export default function StoriesPage() {
   };
 
   const handleUploadCoverImage = async (file: File) => {
-    try {
-      setMessage("Uploading cover image...");
+    setUploading(true);
+    setMessage("");
 
-      const data: any = await uploadFile(file, {
-        folder: "shivay-studio/stories",
-        onProgress: (p) => {
-          setMessage(`Uploading cover image... ${p.percentage}%`);
-        },
-        onError: (error) => {
-          setMessage(`✗ Upload failed: ${error}`);
-        },
-        onSuccess: () => {
-          setMessage("✓ Cover image uploaded");
-        },
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "shivay-studio/stories");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
 
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
       setForm({
         ...form,
         coverImageUrl: data.secure_url,
         coverImageId: data.public_id,
       });
+      setMessage("✓ Cover image uploaded");
     } catch (error: any) {
       setMessage(`✗ Upload failed: ${error.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -328,20 +330,7 @@ export default function StoriesPage() {
           )}
 
           {uploading && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-                <p className="text-sm text-blue-700">Uploading image...</p>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
-                  style={{ width: `${progress?.percentage || 0}%` }}
-                >
-                  {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
-                </div>
-              </div>
-            </div>
+            <p className="text-sm text-blue-600">Uploading image...</p>
           )}
 
           <button

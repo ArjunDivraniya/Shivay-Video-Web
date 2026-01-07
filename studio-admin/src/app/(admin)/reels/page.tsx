@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useUpload } from "@/hooks/useUpload";
 
 interface Reel {
   _id: string;
@@ -16,12 +15,12 @@ interface Reel {
 export default function ReelsPage() {
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [showOnHomepage, setShowOnHomepage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
-  const { uploading, progress, uploadFile } = useUpload();
 
   useEffect(() => {
     loadReels();
@@ -47,18 +46,25 @@ export default function ReelsPage() {
       return;
     }
 
-    try {
-      setMessage("Uploading reel...");
+    setUploading(true);
+    setMessage("");
 
-      const uploadData: any = await uploadFile(file, {
-        folder: "shivay-studio/reels",
-        onProgress: (p) => {
-          setMessage(`Uploading reel... ${p.percentage}%`);
-        },
-        onError: (error) => {
-          setMessage(`✗ Error: ${error}`);
-        },
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "shivay-studio/reels");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
+
+      if (!uploadRes.ok) {
+        const error = await uploadRes.json();
+        throw new Error(error.error || "Upload failed");
+      }
+
+      const uploadData = await uploadRes.json();
 
       const reelPayload = {
         title,
@@ -89,6 +95,8 @@ export default function ReelsPage() {
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
       console.error("Upload error:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -243,22 +251,7 @@ export default function ReelsPage() {
           </p>
         )}
 
-        {uploading && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-              <p className="text-sm text-blue-700">Uploading reel...</p>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
-                style={{ width: `${progress?.percentage || 0}%` }}
-              >
-                {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
-              </div>
-            </div>
-          </div>
-        )}
+        {uploading && <p className="text-sm text-blue-600">Uploading...</p>}
       </div>
 
       {/* Reels Grid */}
