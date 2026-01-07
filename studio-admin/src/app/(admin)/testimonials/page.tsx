@@ -70,7 +70,7 @@ export default function TestimonialsPage() {
       return;
     }
 
-    setUploading(true);
+    setLoading(true);
     setMessage("");
 
     try {
@@ -102,7 +102,7 @@ export default function TestimonialsPage() {
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
