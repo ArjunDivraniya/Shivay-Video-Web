@@ -73,7 +73,7 @@ export default function OurStoryPage() {
       setMessage(`✗ Error: ${error.message}`);
       console.error("Upload error:", error);
     }
-    }
+  }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
