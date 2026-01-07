@@ -6,14 +6,17 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://shivay-video.vercel.app',
   process.env.NEXT_PUBLIC_FRONTEND_URL,
-].filter(Boolean);
+].filter(Boolean) as string[];
 
 export function corsHeaders(origin?: string | null) {
   // Check if the origin is allowed
   const isAllowedOrigin = origin && allowedOrigins.includes(origin);
   
+  // Default to first allowed origin or wildcard
+  const allowOrigin = isAllowedOrigin ? origin : (allowedOrigins[0] || '*');
+  
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
