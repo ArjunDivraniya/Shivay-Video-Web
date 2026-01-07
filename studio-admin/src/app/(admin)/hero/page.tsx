@@ -75,8 +75,6 @@ export default function HeroPage() {
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
       console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
     }
   };
 
