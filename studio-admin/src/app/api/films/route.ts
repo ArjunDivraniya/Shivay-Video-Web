@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Film from "@/models/Film";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 // GET: Get all films
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const films = await Film.find().sort({ createdAt: -1 });
-    return NextResponse.json(films);
+    return createCorsResponse(films, 200, request);
   } catch (error) {
     console.error("Failed to fetch films:", error);
-    return NextResponse.json({ error: "Failed to fetch films" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to fetch films" }, 500, request);
   }
 }
 
@@ -37,9 +43,9 @@ export async function POST(req: NextRequest) {
       videoPublicId: body.videoPublicId,
     });
 
-    return NextResponse.json(film, { status: 201 });
+    return createCorsResponse(film, 201, req);
   } catch (error) {
     console.error("Failed to create film:", error);
-    return NextResponse.json({ error: "Failed to create film" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to create film" }, 500, req);
   }
 }

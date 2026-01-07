@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import WeddingStory from "@/models/WeddingStory";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 // GET: Get all wedding stories
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const weddings = await WeddingStory.find().sort({ createdAt: -1 });
-    return NextResponse.json(weddings);
+    return createCorsResponse(weddings, 200, request);
   } catch (error) {
     console.error("Failed to fetch weddings:", error);
-    return NextResponse.json({ error: "Failed to fetch weddings" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to fetch weddings" }, 500, request);
   }
 }
 
@@ -38,9 +44,9 @@ export async function POST(req: NextRequest) {
       gallery: body.gallery || [],
     });
 
-    return NextResponse.json(wedding, { status: 201 });
+    return createCorsResponse(wedding, 201, req);
   } catch (error) {
     console.error("Failed to create wedding:", error);
-    return NextResponse.json({ error: "Failed to create wedding" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to create wedding" }, 500, req);
   }
 }

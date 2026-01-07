@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Testimonial from "@/models/Testimonial";
 import { testimonialSchema } from "@/lib/validators";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
-export async function GET() {
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: Request) {
+  return handleOptions(request);
+}
+
+export async function GET(request: Request) {
   await dbConnect();
   const testimonials = await Testimonial.find().sort({ createdAt: -1 }).lean();
-  return NextResponse.json(testimonials);
+  return createCorsResponse(testimonials, 200, request);
 }
 
 export async function POST(request: Request) {
@@ -15,8 +21,8 @@ export async function POST(request: Request) {
     const parsed = testimonialSchema.parse(data);
     await dbConnect();
     const testimonial = await Testimonial.create(parsed);
-    return NextResponse.json(testimonial, { status: 201 });
+    return createCorsResponse(testimonial, 201, request);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create testimonial" }, { status: 400 });
+    return createCorsResponse({ error: error.message || "Failed to create testimonial" }, 400, request);
   }
 }

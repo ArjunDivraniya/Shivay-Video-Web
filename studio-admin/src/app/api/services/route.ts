@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Service from "@/models/Service";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 // GET: Get all services
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const services = await Service.find().sort({ createdAt: -1 });
-    return NextResponse.json(services);
+    return createCorsResponse(services, 200, request);
   } catch (error) {
     console.error("Failed to fetch services:", error);
-    return NextResponse.json({ error: "Failed to fetch services" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to fetch services" }, 500, request);
   }
 }
 
@@ -38,9 +44,9 @@ export async function POST(req: NextRequest) {
       isActive: body.isActive !== undefined ? body.isActive : true,
     });
 
-    return NextResponse.json(service, { status: 201 });
+    return createCorsResponse(service, 201, req);
   } catch (error) {
     console.error("Failed to create service:", error);
-    return NextResponse.json({ error: "Failed to create service" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to create service" }, 500, req);
   }
 }
