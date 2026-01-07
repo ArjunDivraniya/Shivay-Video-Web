@@ -12,17 +12,70 @@ const PUBLIC_PATHS = [
   "/ms-icon",
 ];
 
+// Public GET endpoints (read-only for portfolio site)
+const PUBLIC_GET_APIS = [
+  "/api/hero",
+  "/api/services",
+  "/api/gallery",
+  "/api/films",
+  "/api/about",
+  "/api/testimonials",
+  "/api/weddings",
+  "/api/stories",
+  "/api/reviews",
+  "/api/reels",
+  "/api/sections",
+  "/api/settings",
+  "/api/footer",
+  "/api/our-story",
+  "/api/media",
+];
+
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+}
+
+function isPublicGetApi(pathname: string, method: string) {
+  return method === "GET" && PUBLIC_GET_APIS.some((path) => pathname.startsWith(path));
 }
 
 function getToken(req: NextRequest) {
   return req.cookies.get("admin_token")?.value;
 }
 
+function addCorsHeaders(response: NextResponse, origin?: string | null) {
+  // Get allowed origins from env or use wildcard
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['*'];
+  
+  // If specific origins are configured, check if the request origin is allowed
+  if (allowedOrigins[0] !== '*' && origin) {
+    if (allowedOrigins.includes(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    }
+  } else {
+    // Allow all origins (useful for development or public APIs)
+    response.headers.set("Access-Control-Allow-Origin", "*");
+  }
+  
+  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.headers.set("Access-Control-Max-Age", "86400");
+  response.headers.set("Access-Control-Allow-Credentials", "true");
+  return response;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = getToken(req);
+  const method = req.method;
+  const origin = req.headers.get("origin");
+
+  // Handle CORS preflight requests
+  if (method === "OPTIONS") {
+    return addCorsHeaders(new NextResponse(null, { status: 200 }), origin);
+  }
 
   // Redirect logged-in users from login page to dashboard
   if (pathname === "/login" && token) {
@@ -36,19 +89,30 @@ export async function middleware(req: NextRequest) {
 
   // Allow public paths
   if (isPublicPath(pathname)) {
-    return NextResponse.next();
+    return addCorsHeaders(NextResponse.next(), origin);
   }
 
-  // All API routes require authentication
+  // Allow public GET requests to API (for portfolio site)
+  if (isPublicGetApi(pathname, method)) {
+    return addCorsHeaders(NextResponse.next(), origin);
+  }
+
+  // All other API routes require authentication (POST, PUT, DELETE)
   if (pathname.startsWith("/api")) {
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        origin
+      );
     }
     try {
       await verifyToken(token);
-      return NextResponse.next();
+      return addCorsHeaders(NextResponse.next(), origin);
     } catch (error) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        origin
+      );
     }
   }
 

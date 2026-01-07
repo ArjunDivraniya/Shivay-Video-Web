@@ -1,5 +1,8 @@
-// Use relative path in dev (proxied by Vite), absolute in production
-const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api';
+// Use environment variable if available, otherwise fallback to default
+// In dev: uses proxy (/api) or env variable
+// In production: uses env variable or hardcoded URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api');
 
 export interface HeroData {
   studioName?: string;
