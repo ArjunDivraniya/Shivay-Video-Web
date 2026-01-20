@@ -17,10 +17,20 @@ interface Wedding {
   createdAt: string;
 }
 
+interface WeddingGalleryImage {
+  _id: string;
+  imageUrl: string;
+  imagePublicId: string;
+  photoType: "wedding" | "prewedding";
+  order: number;
+  createdAt: string;
+}
+
 const SERVICE_TYPES = ["Wedding", "Corporate", "Party", "Other"];
 
 export default function WeddingsPage() {
   const [weddings, setWeddings] = useState<Wedding[]>([]);
+  const [galleryShowcase, setGalleryShowcase] = useState<WeddingGalleryImage[]>([]);
   const [services, setServices] = useState<{ serviceType: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -31,14 +41,18 @@ export default function WeddingsPage() {
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
   const [coverPhotoId, setCoverPhotoId] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  const [showcasePhotoType, setShowcasePhotoType] = useState<"wedding" | "prewedding">("wedding");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+  const showcaseDragRef = useRef<HTMLDivElement>(null);
+  const showcaseFileInputRef = useRef<HTMLInputElement>(null);
   const { uploading, progress, uploadFile, uploadMultipleFiles } = useUpload();
 
   useEffect(() => {
     loadWeddings();
     loadServices();
+    loadGalleryShowcase();
   }, []);
 
   const loadServices = async () => {
@@ -48,6 +62,18 @@ export default function WeddingsPage() {
       setServices(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load services:", error);
+    }
+  };
+
+  const loadGalleryShowcase = async () => {
+    try {
+      const response = await fetch("/api/wedding-gallery");
+      const result = await response.json();
+      if (result.success) {
+        setGalleryShowcase(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch wedding gallery showcase");
     }
   };
 
@@ -210,6 +236,136 @@ export default function WeddingsPage() {
 
   const removeGalleryImage = (index: number) => {
     setGalleryUrls(galleryUrls.filter((_, i) => i !== index));
+  };
+
+  // Gallery Showcase Handlers
+  const handleUploadShowcaseImages = async (files: FileList) => {
+    if (files.length === 0) return;
+
+    setMessage(`Uploading ${files.length} image(s) to showcase...`);
+
+    try {
+      const fileArray = Array.from(files).filter((file) => {
+        if (!file.type.startsWith("image/")) {
+          setMessage(`✗ ${file.name} is not an image`);
+          return false;
+        }
+        return true;
+      });
+
+      if (fileArray.length === 0) return;
+
+      const uploadedFiles = await uploadMultipleFiles(fileArray, {
+        folder: "shivay-studio/wedding-gallery",
+        onProgress: (p) => {
+          setMessage(
+            `Uploading ${p.loaded} of ${p.total} files... ${p.percentage}%`
+          );
+        },
+        onError: (error) => {
+          setMessage(`✗ Error: ${error}`);
+        },
+      });
+
+      // Save all uploaded files to database
+      const savePromises = uploadedFiles.map(async (uploadData: any) => {
+        const dbRes = await fetch("/api/wedding-gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: uploadData.secure_url,
+            imagePublicId: uploadData.public_id,
+            photoType: showcasePhotoType,
+            order: galleryShowcase.length,
+          }),
+        });
+
+        if (!dbRes.ok) throw new Error("Failed to save to database");
+        return await dbRes.json();
+      });
+
+      const savedImages = await Promise.all(savePromises);
+      setGalleryShowcase([...galleryShowcase, ...savedImages.map(r => r.data)]);
+      setMessage(`✓ ${uploadedFiles.length} image(s) uploaded to showcase!`);
+      if (showcaseFileInputRef.current) showcaseFileInputRef.current.value = "";
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      setMessage(`✗ Error: ${error.message}`);
+    }
+  };
+
+  const handleShowcaseDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (showcaseDragRef.current) {
+      showcaseDragRef.current.classList.add("border-blue-500", "bg-blue-50");
+    }
+  };
+
+  const handleShowcaseDragLeave = () => {
+    if (showcaseDragRef.current) {
+      showcaseDragRef.current.classList.remove("border-blue-500", "bg-blue-50");
+    }
+  };
+
+  const handleShowcaseDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (showcaseDragRef.current) {
+      showcaseDragRef.current.classList.remove("border-blue-500", "bg-blue-50");
+    }
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleUploadShowcaseImages(files);
+    }
+  };
+
+  const handleDeleteShowcaseImage = async (image: WeddingGalleryImage) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+
+    try {
+      const response = await fetch("/api/wedding-gallery", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: image._id,
+          imagePublicId: image.imagePublicId,
+        }),
+      });
+
+      if (response.ok) {
+        setGalleryShowcase(galleryShowcase.filter((img) => img._id !== image._id));
+        setMessage("✓ Image deleted successfully");
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (error) {
+      setMessage("Failed to delete image");
+    }
+  };
+
+  const handleReorderShowcase = async (fromIndex: number, toIndex: number) => {
+    const newImages = [...galleryShowcase];
+    const [movedImage] = newImages.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, movedImage);
+
+    // Update order in database
+    for (let i = 0; i < newImages.length; i++) {
+      try {
+        await fetch("/api/wedding-gallery", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: newImages[i]._id,
+            order: i,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to update order:", error);
+      }
+    }
+
+    setGalleryShowcase(newImages);
+    setMessage("✓ Images reordered successfully");
+    setTimeout(() => setMessage(""), 3000);
   };
 
   return (
@@ -404,6 +560,158 @@ export default function WeddingsPage() {
           {loading ? "Creating..." : "Create Wedding Story"}
         </button>
       </form>
+
+      {/* Gallery Showcase Section */}
+      <div className="card p-6 space-y-6 fade-in">
+        <h2 className="text-lg font-semibold">Wedding Gallery Showcase</h2>
+        <p className="text-sm text-[var(--muted)]">
+          Upload photos to display in the wedding gallery section on your website (for the gallery showcase slider)
+        </p>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Photo Type</label>
+          <select
+            value={showcasePhotoType}
+            onChange={(e) => setShowcasePhotoType(e.target.value as "wedding" | "prewedding")}
+            disabled={uploading}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="wedding">Wedding Photos</option>
+            <option value="prewedding">Prewedding Photos</option>
+          </select>
+        </div>
+
+        <div
+          ref={showcaseDragRef}
+          onDragOver={handleShowcaseDragOver}
+          onDragLeave={handleShowcaseDragLeave}
+          onDrop={handleShowcaseDrop}
+          className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50"
+          onClick={() => showcaseFileInputRef.current?.click()}
+        >
+          <input
+            ref={showcaseFileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => e.target.files && handleUploadShowcaseImages(e.target.files)}
+            className="hidden"
+            disabled={uploading}
+          />
+          <div className="space-y-3">
+            <div className="text-5xl">📸</div>
+            <p className="text-lg font-medium text-gray-900">
+              Drag & drop photos here
+            </p>
+            <p className="text-sm text-gray-600">
+              or click to browse • Multiple images supported
+            </p>
+          </div>
+        </div>
+
+        {uploading && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+              <p className="text-sm text-blue-700">
+                Uploading {progress.loaded} of {progress.total} files...
+              </p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{ width: `${progress.percentage}%` }}
+              >
+                {progress.percentage > 10 && `${progress.percentage}%`}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gallery Showcase Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-sm text-gray-600">Wedding Photos</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {galleryShowcase.filter((img) => img.photoType === "wedding").length}
+            </p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <p className="text-sm text-gray-600">Prewedding Photos</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {galleryShowcase.filter((img) => img.photoType === "prewedding").length}
+            </p>
+          </div>
+        </div>
+
+        {/* Showcase Images Grid */}
+        <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900">Showcase Gallery ({galleryShowcase.length} photos)</h3>
+          </div>
+          
+          {galleryShowcase.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <p className="text-lg">No showcase photos yet</p>
+              <p className="text-sm mt-1">Upload photos using the drag & drop area above</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+              {galleryShowcase.map((image, index) => (
+                <div key={image._id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 hover:shadow-lg transition-shadow">
+                  <img
+                    src={image.imageUrl}
+                    alt={`Gallery ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2 flex items-end justify-between">
+                      <span className={`text-xs font-bold text-white px-2 py-1 rounded ${
+                        image.photoType === "wedding" ? "bg-blue-600" : "bg-purple-600"
+                      }`}>
+                        {image.photoType === "wedding" ? "WEDDING" : "PREWEDDING"}
+                      </span>
+                      <div className="flex gap-1">
+                        {index > 0 && (
+                          <button
+                            onClick={() => handleReorderShowcase(index, index - 1)}
+                            className="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded text-xs transition"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                        )}
+                        {index < galleryShowcase.length - 1 && (
+                          <button
+                            onClick={() => handleReorderShowcase(index, index + 1)}
+                            className="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded text-xs transition"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteShowcaseImage(image)}
+                          className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded text-xs transition"
+                          title="Delete"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>💡 Tip:</strong> Upload at least 14 images for optimal display. Use the reorder buttons (↑/↓) to arrange your gallery.
+          </p>
+        </div>
+      </div>
 
       {/* Wedding List */}
       <div className="card p-6 space-y-4">

@@ -6,7 +6,8 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-  port: 8080,
+  // Use default Vite port that matches allowed origins on the API (5173)
+  port: 5173,
   proxy: {
     '/api': {
       target: 'https://shivay-video-admin.vercel.app',

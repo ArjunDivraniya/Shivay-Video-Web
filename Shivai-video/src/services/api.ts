@@ -4,10 +4,8 @@
  * FIXED: This logic now strictly uses the relative '/api' path during local development.
  * This ensures the Vite Proxy in vite.config.ts is triggered, preventing CORS errors.
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? '/api' 
-    : 'https://shivay-video-admin.vercel.app/api');
+// Prefer relative proxy in dev; allow override via env; fallback to production URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface HeroData {
   studioName?: string;
