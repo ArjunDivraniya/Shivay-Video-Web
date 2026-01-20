@@ -1,8 +1,13 @@
-// Use environment variable if available, otherwise fallback based on mode
-// Development: uses Vite proxy (/api -> localhost:3000)
-// Production: uses production backend URL
+// --- API Configuration ---
+
+/**
+ * FIXED: This logic now strictly uses the relative '/api' path during local development.
+ * This ensures the Vite Proxy in vite.config.ts is triggered, preventing CORS errors.
+ */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api');
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? '/api' 
+    : 'https://shivay-video-admin.vercel.app/api');
 
 export interface HeroData {
   studioName?: string;
@@ -94,7 +99,6 @@ class ApiService {
       ? crypto.randomUUID()
       : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-  // --- Normalizers keep component types consistent regardless of backend field names ---
   private normalizeHero = (data: any): HeroData => ({
     studioName: data?.studioName || data?.title,
     tagline: data?.tagline || data?.subtitle,
@@ -159,14 +163,23 @@ class ApiService {
 
   private async fetchData<T>(endpoint: string): Promise<T> {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+      const url = `${API_BASE_URL}${endpoint}`;
+      console.log(`[ApiService] Requesting: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error(`Error fetching ${endpoint}:`, error);
+      console.error(`[ApiService] Error fetching ${endpoint}:`, error);
       throw error;
     }
   }
@@ -177,7 +190,6 @@ class ApiService {
       const hero = this.asObject(data);
       return hero ? this.normalizeHero(hero) : null;
     } catch (error) {
-      console.error('Error fetching hero data:', error);
       return null;
     }
   }
@@ -188,7 +200,6 @@ class ApiService {
       const data = this.asArray(raw);
       return data.map(this.normalizeService);
     } catch (error) {
-      console.error('Error fetching services:', error);
       return [];
     }
   }
@@ -199,24 +210,20 @@ class ApiService {
       const data = this.asArray(raw);
       return data.map((img, index) => this.normalizeGalleryImage(img, index));
     } catch (error) {
-      console.error('Error fetching gallery:', error);
       return [];
     }
   }
 
   async getHighlightGallery(): Promise<GalleryImage[]> {
     try {
-      // Try highlight endpoint first
       const raw = await this.fetchData<any>('/gallery/highlight');
       const data = this.asArray(raw);
       return data.map(this.normalizeGalleryImage);
     } catch (error) {
-      // Fallback to regular gallery and filter highlights on client side
       try {
         const allGallery = await this.getGallery();
         return allGallery.filter(img => img.isHighlight);
       } catch (fallbackError) {
-        console.error('Error fetching gallery for highlights:', fallbackError);
         return [];
       }
     }
@@ -228,7 +235,6 @@ class ApiService {
       const data = this.asObject(raw);
       return data ? this.normalizeAbout(data) : null;
     } catch (error) {
-      console.error('Error fetching about stats:', error);
       return null;
     }
   }
@@ -239,15 +245,11 @@ class ApiService {
       const data = this.asArray(raw);
       return data.map(this.normalizeWeddingStory);
     } catch (primaryError) {
-      console.error('Error fetching weddings, falling back to /stories:', primaryError);
       try {
         const fallbackRaw = await this.fetchData<any>('/stories');
         const fallback = this.asArray(fallbackRaw);
-        console.log('API Response for stories:', fallback);
-        console.log('Number of stories:', Array.isArray(fallback) ? fallback.length : 0);
         return fallback.map(this.normalizeWeddingStory);
       } catch (fallbackError) {
-        console.error('Error fetching stories fallback:', fallbackError);
         return [];
       }
     }
@@ -263,32 +265,20 @@ class ApiService {
       const data = this.asArray(raw);
       return data.map(this.normalizeFilm);
     } catch (error) {
-      console.error('Error fetching films:', error);
       return [];
     }
   }
 
   async getTestimonials(): Promise<Testimonial[]> {
     try {
-      console.log('Fetching testimonials from /reviews endpoint...');
       const raw = await this.fetchData<any>('/reviews');
       const data = this.asArray(raw);
-      console.log('Raw testimonials data:', data);
-      
       const approved = Array.isArray(data)
         ? data.filter((item) => item.approved !== false)
         : [];
-      
-      console.log('Filtered testimonials count:', approved.length);
-      const normalized = approved.map(this.normalizeTestimonial);
-      console.log('Normalized testimonials:', normalized);
-      
-      return normalized;
+      return approved.map(this.normalizeTestimonial);
     } catch (error) {
-      console.error('Error fetching testimonials from /reviews:', error);
-      // Fallback to /testimonials endpoint if /reviews fails
       try {
-        console.log('Falling back to /testimonials endpoint...');
         const fallbackRaw = await this.fetchData<any>('/testimonials');
         const fallbackData = this.asArray(fallbackRaw);
         const approved = Array.isArray(fallbackData)
@@ -296,7 +286,6 @@ class ApiService {
           : [];
         return approved.map(this.normalizeTestimonial);
       } catch (fallbackError) {
-        console.error('Error fetching testimonials from /testimonials fallback:', fallbackError);
         return [];
       }
     }
