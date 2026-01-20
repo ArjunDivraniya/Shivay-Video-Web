@@ -148,11 +148,7 @@ export default function WeddingGalleryManager() {
           uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
           onSuccess={(result: any) => handleUploadSuccess(result, "wedding")}
           onError={(error: any) => {
-            toast({
-              title: "Upload Error",
-              description: error.message || "Failed to upload image",
-              variant: "destructive",
-            });
+            notify("Upload Error", error.message || "Failed to upload image");
           }}
         >
           {({ open }) => (
@@ -170,11 +166,7 @@ export default function WeddingGalleryManager() {
           uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
           onSuccess={(result: any) => handleUploadSuccess(result, "prewedding")}
           onError={(error: any) => {
-            toast({
-              title: "Upload Error",
-              description: error.message || "Failed to upload image",
-              variant: "destructive",
-            });
+            notify("Upload Error", error.message || "Failed to upload image");
           }}
         >
           {({ open }) => (
