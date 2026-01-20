@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import OurStory from "@/models/OurStory";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 // GET: Retrieve our story
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const ourStory = await OurStory.findOne().sort({ updatedAt: -1 });
-    return NextResponse.json(ourStory || {});
+    return createCorsResponse(ourStory || {}, 200, request);
   } catch (error) {
     console.error("Failed to fetch our story:", error);
-    return NextResponse.json({ error: "Failed to fetch our story" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to fetch our story" }, 500, request);
   }
 }
 
@@ -23,9 +29,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (!body.imageUrl || !body.imagePublicId || !body.startedYear || !body.description) {
-      return NextResponse.json(
+      return createCorsResponse(
         { error: "imageUrl, imagePublicId, startedYear, and description are required" },
-        { status: 400 }
+        400,
+        req
       );
     }
 
@@ -39,9 +46,9 @@ export async function POST(req: NextRequest) {
       description: body.description,
     });
 
-    return NextResponse.json(ourStory, { status: 201 });
+    return createCorsResponse(ourStory, 201, req);
   } catch (error) {
     console.error("Failed to create our story:", error);
-    return NextResponse.json({ error: "Failed to create our story" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to create our story" }, 500, req);
   }
 }

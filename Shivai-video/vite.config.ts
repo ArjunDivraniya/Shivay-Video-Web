@@ -10,9 +10,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'https://shivay-video-admin.vercel.app',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: (path) => path,
       },
     },

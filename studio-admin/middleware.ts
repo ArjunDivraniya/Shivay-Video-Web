@@ -44,21 +44,16 @@ function getToken(req: NextRequest) {
 }
 
 function addCorsHeaders(response: NextResponse, origin?: string | null) {
-  // Get allowed origins from env or use wildcard
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['*'];
-  
-  // If specific origins are configured, check if the request origin is allowed
-  if (allowedOrigins[0] !== '*' && origin) {
-    if (allowedOrigins.includes(origin)) {
-      response.headers.set("Access-Control-Allow-Origin", origin);
-    }
+    : ['http://localhost:8080', 'http://localhost:5173', 'https://shivay-video.vercel.app'];
+
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
   } else {
-    // Allow all origins (useful for development or public APIs)
     response.headers.set("Access-Control-Allow-Origin", "*");
   }
-  
+
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   response.headers.set("Access-Control-Max-Age", "86400");

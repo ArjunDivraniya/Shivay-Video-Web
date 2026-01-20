@@ -30,6 +30,24 @@ export function useUpload() {
     setProgress({ percentage: 0, loaded: 0, total: 0 });
 
     try {
+      // Early size validation for better UX
+      const MAX_IMAGE_MB = Number(process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 10);
+      const MAX_VIDEO_MB = Number(process.env.NEXT_PUBLIC_MAX_VIDEO_SIZE_MB || 100);
+      const sizeMB = Math.round((file.size / (1024 * 1024)) * 100) / 100;
+      const isVideo = file.type.startsWith("video/");
+      if (!isVideo && sizeMB > MAX_IMAGE_MB) {
+        const msg = `Image too large: ${sizeMB}MB. Max ${MAX_IMAGE_MB}MB.`;
+        onError?.(msg);
+        setUploading(false);
+        throw new Error(msg);
+      }
+      if (isVideo && sizeMB > MAX_VIDEO_MB) {
+        const msg = `Video too large: ${sizeMB}MB. Max ${MAX_VIDEO_MB}MB.`;
+        onError?.(msg);
+        setUploading(false);
+        throw new Error(msg);
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);

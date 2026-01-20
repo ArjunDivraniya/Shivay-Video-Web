@@ -1,22 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Reel from "@/models/Reel";
 import { reelSchema } from "@/lib/validators";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
-export async function GET() {
-  await dbConnect();
-  const reels = await Reel.find().sort({ createdAt: -1 }).lean();
-  return NextResponse.json(reels);
+export const dynamic = "force-dynamic";
+
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
 }
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
+  await dbConnect();
+  const reels = await Reel.find().sort({ createdAt: -1 }).lean();
+  return createCorsResponse(reels, 200, request);
+}
+
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const parsed = reelSchema.parse(data);
     await dbConnect();
     const reel = await Reel.create(parsed);
-    return NextResponse.json(reel, { status: 201 });
+    return createCorsResponse(reel, 201, request);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create reel" }, { status: 400 });
+    return createCorsResponse({ error: error.message || "Failed to create reel" }, 400, request);
   }
 }

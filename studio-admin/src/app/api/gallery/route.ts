@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Gallery from "@/models/Gallery";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
+
 // GET: Get all gallery images
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const images = await Gallery.find().sort({ createdAt: -1 });
-    return NextResponse.json(images);
+    return createCorsResponse(images, 200, request);
   } catch (error) {
     console.error("Failed to fetch gallery:", error);
-    return NextResponse.json({ error: "Failed to fetch gallery" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to fetch gallery" }, 500, request);
   }
 }
 
@@ -23,9 +29,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (!body.imageUrl || !body.imagePublicId || !body.category) {
-      return NextResponse.json(
+      return createCorsResponse(
         { error: "imageUrl, imagePublicId, and category are required" },
-        { status: 400 }
+        400,
+        req
       );
     }
 
@@ -36,9 +43,9 @@ export async function POST(req: NextRequest) {
       serviceType: body.serviceType || "",
     });
 
-    return NextResponse.json(image, { status: 201 });
+    return createCorsResponse(image, 201, req);
   } catch (error) {
     console.error("Failed to upload photo:", error);
-    return NextResponse.json({ error: "Failed to upload photo" }, { status: 500 });
+    return createCorsResponse({ error: "Failed to upload photo" }, 500, req);
   }
 }

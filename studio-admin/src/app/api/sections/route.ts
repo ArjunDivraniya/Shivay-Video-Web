@@ -1,15 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Section from "@/models/Section";
 import { sectionSchema } from "@/lib/validators";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
-export async function GET() {
-  await dbConnect();
-  const sections = await Section.find().sort({ order: 1 }).lean();
-  return NextResponse.json(sections);
+export const dynamic = "force-dynamic";
+
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
 }
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
+  await dbConnect();
+  const sections = await Section.find().sort({ order: 1 }).lean();
+  return createCorsResponse(sections, 200, request);
+}
+
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const parsed = sectionSchema.parse(data);
@@ -19,8 +27,8 @@ export async function POST(request: Request) {
       parsed,
       { upsert: true, new: true }
     );
-    return NextResponse.json(section, { status: 201 });
+    return createCorsResponse(section, 201, request);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to save section" }, { status: 400 });
+    return createCorsResponse({ error: error.message || "Failed to save section" }, 400, request);
   }
 }

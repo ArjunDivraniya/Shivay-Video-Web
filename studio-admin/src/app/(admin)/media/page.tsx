@@ -48,6 +48,18 @@ export default function MediaPage() {
     setMessage("");
 
     try {
+      // Client-side size checks for faster feedback
+      const MAX_IMAGE_MB = Number(process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 10);
+      const MAX_VIDEO_MB = Number(process.env.NEXT_PUBLIC_MAX_VIDEO_SIZE_MB || 100);
+      const sizeMB = Math.round((file.size / (1024 * 1024)) * 100) / 100;
+      const isVideo = file.type.startsWith("video/");
+      if (!isVideo && sizeMB > MAX_IMAGE_MB) {
+        throw new Error(`Image too large: ${sizeMB}MB. Max ${MAX_IMAGE_MB}MB.`);
+      }
+      if (isVideo && sizeMB > MAX_VIDEO_MB) {
+        throw new Error(`Video too large: ${sizeMB}MB. Max ${MAX_VIDEO_MB}MB.`);
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "shivay-studio/media");
@@ -57,7 +69,14 @@ export default function MediaPage() {
         body: formData,
       });
 
-      if (!uploadRes.ok) throw new Error("Upload failed");
+      if (!uploadRes.ok) {
+        try {
+          const errBody = await uploadRes.json();
+          throw new Error(errBody.error || "Upload failed");
+        } catch {
+          throw new Error("Upload failed");
+        }
+      }
 
       const uploadData: any = await uploadRes.json();
 

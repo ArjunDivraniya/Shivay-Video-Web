@@ -1,23 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Story from "@/models/Story";
 import { storySchema } from "@/lib/validators";
+import { handleOptions, createCorsResponse } from "@/lib/cors";
 
-export async function GET() {
-  await dbConnect();
-  const stories = await Story.find().sort({ createdAt: -1 }).lean();
-  return NextResponse.json(stories);
+export const dynamic = "force-dynamic";
+
+// OPTIONS: Handle preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
 }
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
+  await dbConnect();
+  const stories = await Story.find().sort({ createdAt: -1 }).lean();
+  return createCorsResponse(stories, 200, request);
+}
+
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const parsed = storySchema.parse(data);
 
     await dbConnect();
     const story = await Story.create(parsed);
-    return NextResponse.json(story, { status: 201 });
+    return createCorsResponse(story, 201, request);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create story" }, { status: 400 });
+    return createCorsResponse({ error: error.message || "Failed to create story" }, 400, request);
   }
 }

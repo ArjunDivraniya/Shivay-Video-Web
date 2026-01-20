@@ -1,10 +1,8 @@
-// Use environment variable if available, otherwise fallback to default
-// In dev: uses proxy (/api) or env variable
-// In production: uses env variable or hardcoded URL
+// Use environment variable if available, otherwise fallback based on mode
+// Development: uses Vite proxy (/api -> localhost:3000)
+// Production: uses production backend URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.DEV ? '/api' : 'https://shivay-video-admin.vercel.app/api');
-
-console.log("Current API URL:", API_BASE_URL);
 
 export interface HeroData {
   studioName?: string;
