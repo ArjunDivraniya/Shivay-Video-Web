@@ -9,6 +9,19 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Content-Type": "application/json",
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // GET all wedding gallery images
 export async function GET() {
   try {
@@ -16,11 +29,15 @@ export async function GET() {
     const images = await WeddingGalleryImage.find()
       .sort({ order: 1, createdAt: -1 })
       .lean();
-    return NextResponse.json({ success: true, data: images });
-  } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      { success: true, data: images },
+      { headers: corsHeaders }
+    );
+  } catch (error: any) {
+    console.error("Wedding gallery GET error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to fetch images" },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -35,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (!imageUrl || !imagePublicId || !photoType) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -48,12 +65,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: newImage },
-      { status: 201 }
+      { status: 201, headers: corsHeaders }
     );
   } catch (error: any) {
+    console.error("Wedding gallery POST error:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      { success: false, error: error.message || "Failed to create image" },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -68,7 +86,7 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: "Missing image ID" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -78,11 +96,15 @@ export async function PUT(req: NextRequest) {
       { new: true }
     );
 
-    return NextResponse.json({ success: true, data: updatedImage });
-  } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      { success: true, data: updatedImage },
+      { headers: corsHeaders }
+    );
+  } catch (error: any) {
+    console.error("Wedding gallery PUT error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to update image" },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -97,7 +119,7 @@ export async function DELETE(req: NextRequest) {
     if (!id || !imagePublicId) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -107,11 +129,15 @@ export async function DELETE(req: NextRequest) {
     // Delete from database
     await WeddingGalleryImage.findByIdAndDelete(id);
 
-    return NextResponse.json({ success: true, message: "Image deleted" });
-  } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      { success: true, message: "Image deleted" },
+      { headers: corsHeaders }
+    );
+  } catch (error: any) {
+    console.error("Wedding gallery DELETE error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to delete image" },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
