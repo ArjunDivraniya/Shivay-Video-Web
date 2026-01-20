@@ -47,7 +47,6 @@ function addCorsHeaders(response: NextResponse, origin?: string | null) {
   // List all origins you want to allow
   const allowedOrigins = [
     'http://localhost:8080',
-    'http://localhost:5173',
     'https://shivay-video.vercel.app', // Replace with your actual deployed frontend URL
     process.env.NEXT_PUBLIC_FRONTEND_URL
   ].filter(Boolean);
