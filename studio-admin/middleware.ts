@@ -12,7 +12,6 @@ const PUBLIC_PATHS = [
   "/ms-icon",
 ];
 
-// Public GET endpoints (read-only for portfolio site)
 const PUBLIC_GET_APIS = [
   "/api/hero",
   "/api/services",
@@ -43,25 +42,27 @@ function getToken(req: NextRequest) {
   return req.cookies.get("admin_token")?.value;
 }
 
+/**
+ * FIXED CORS HEADER FUNCTION
+ */
 function addCorsHeaders(response: NextResponse, origin?: string | null) {
-  // 1. Define all allowed URLs (Local + Production)
   const allowedOrigins = [
-    'http://localhost:8080',           // Your current local port
-    'http://localhost:5173',           // Standard Vite port
-    'https://shivay-video.vercel.app'  // Your live frontend
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'http://localhost:5173',
+    'https://shivay-video.vercel.app'
   ];
 
-  // 2. Check if the incoming request origin is in the allowed list
-  if (origin && allowedOrigins.includes(origin)) {
-    response.headers.set("Access-Control-Allow-Origin", origin);
-  } else {
-    // Default to your production URL if no match is found
-    response.headers.set("Access-Control-Allow-Origin", "https://shivay-video.vercel.app");
-  }
+  // If origin is allowed, use it. Otherwise, default to production link.
+  const currentOrigin = (origin && allowedOrigins.includes(origin)) 
+    ? origin 
+    : "https://shivay-video.vercel.app";
 
+  response.headers.set("Access-Control-Allow-Origin", currentOrigin);
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
   response.headers.set("Access-Control-Allow-Credentials", "true");
+  response.headers.set("Access-Control-Max-Age", "86400"); // 24 hours cache for preflight
   
   return response;
 }
@@ -72,63 +73,62 @@ export async function middleware(req: NextRequest) {
   const method = req.method;
   const origin = req.headers.get("origin");
 
-  // Handle CORS preflight requests
+  // 1. Handle CORS preflight (OPTIONS)
   if (method === "OPTIONS") {
-    return addCorsHeaders(new NextResponse(null, { status: 200 }), origin);
+    const response = new NextResponse(null, { status: 200 });
+    return addCorsHeaders(response, origin);
   }
 
-  // Redirect logged-in users from login page to dashboard
+  // 2. Redirect logged-in users from login to dashboard
   if (pathname === "/login" && token) {
     try {
       await verifyToken(token);
       return NextResponse.redirect(new URL("/dashboard", req.url));
     } catch (error) {
-      // Invalid token, allow login page load
+      // Allow login if token is invalid
     }
   }
 
-  // Allow public paths
-  if (isPublicPath(pathname)) {
-    return addCorsHeaders(NextResponse.next(), origin);
-  }
-
-  // Allow public GET requests to API (for portfolio site)
-  if (isPublicGetApi(pathname, method)) {
-    return addCorsHeaders(NextResponse.next(), origin);
-  }
-
-  // All other API routes require authentication (POST, PUT, DELETE)
+  // 3. Handle API Routes
   if (pathname.startsWith("/api")) {
+    let response: NextResponse;
+
+    // Check if it's a public GET request
+    if (isPublicGetApi(pathname, method)) {
+      response = NextResponse.next();
+    } else if (isPublicPath(pathname)) {
+      // Other public paths (like login API)
+      response = NextResponse.next();
+    } else {
+      // Protected API logic
+      if (!token) {
+        response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      } else {
+        try {
+          await verifyToken(token);
+          response = NextResponse.next();
+        } catch (error) {
+          response = NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        }
+      }
+    }
+    return addCorsHeaders(response, origin);
+  }
+
+  // 4. Protect Admin Dashboard Pages
+  if (!isPublicPath(pathname)) {
     if (!token) {
-      return addCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        origin
-      );
+      return NextResponse.redirect(new URL("/login", req.url));
     }
     try {
       await verifyToken(token);
-      return addCorsHeaders(NextResponse.next(), origin);
+      return NextResponse.next();
     } catch (error) {
-      return addCorsHeaders(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        origin
-      );
+      return NextResponse.redirect(new URL("/login", req.url));
     }
   }
 
-  // Protect admin pages (Dashboard, etc.)
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  try {
-    await verifyToken(token);
-    return NextResponse.next();
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    // Token is invalid/expired, redirect to login
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  return NextResponse.next();
 }
 
 export const config = {
