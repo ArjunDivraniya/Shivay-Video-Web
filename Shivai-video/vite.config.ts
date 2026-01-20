@@ -6,17 +6,15 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 8080,
-    proxy: {
-  '/api': {
-    target: 'https://shivay-video-admin.vercel.app', // Point local dev to your LIVE backend
-    changeOrigin: true,
-    secure: true,
-    rewrite: (path) => path,
+  port: 8080,
+  proxy: {
+    '/api': {
+      target: 'https://shivay-video-admin.vercel.app',
+      changeOrigin: true,
+      secure: true,
+    },
   },
 },
-  },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {

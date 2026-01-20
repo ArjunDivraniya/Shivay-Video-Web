@@ -44,25 +44,25 @@ function getToken(req: NextRequest) {
 }
 
 function addCorsHeaders(response: NextResponse, origin?: string | null) {
-  // List all origins you want to allow
+  // 1. Define all allowed URLs (Local + Production)
   const allowedOrigins = [
-    'http://localhost:8080',
-    'https://shivay-video.vercel.app', // Replace with your actual deployed frontend URL
-    process.env.NEXT_PUBLIC_FRONTEND_URL
-  ].filter(Boolean);
-  
-  // Check if the incoming request origin is in your allowed list
+    'http://localhost:8080',           // Your current local port
+    'http://localhost:5173',           // Standard Vite port
+    'https://shivay-video.vercel.app'  // Your live frontend
+  ];
+
+  // 2. Check if the incoming request origin is in the allowed list
   if (origin && allowedOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
-  } else if (!origin) {
-    // Fallback for tools like Postman or server-side fetches
-    response.headers.set("Access-Control-Allow-Origin", "*");
+  } else {
+    // Default to your production URL if no match is found
+    response.headers.set("Access-Control-Allow-Origin", "https://shivay-video.vercel.app");
   }
-  
+
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  response.headers.set("Access-Control-Max-Age", "86400");
   response.headers.set("Access-Control-Allow-Credentials", "true");
+  
   return response;
 }
 
