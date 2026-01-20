@@ -44,34 +44,26 @@ function getToken(req: NextRequest) {
 }
 
 function addCorsHeaders(response: NextResponse, origin?: string | null) {
-  // Allow both local development and production frontends
-  const defaultOrigins = [
+  // List all origins you want to allow
+  const allowedOrigins = [
     'http://localhost:8080',
     'http://localhost:5173',
-    'https://shivay-video.vercel.app',
-    'https://shivay-video-admin.vercel.app'
-  ];
+    'https://shivay-video.vercel.app', // Replace with your actual deployed frontend URL
+    process.env.NEXT_PUBLIC_FRONTEND_URL
+  ].filter(Boolean);
   
-  const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
-    : defaultOrigins;
-
-  // Check if origin is in allowed list
-  if (origin && allowedOrigins.some(allowed => {
-    const normalizedOrigin = origin.replace(/\/$/, '');
-    const normalizedAllowed = allowed.replace(/\/$/, '');
-    return normalizedOrigin === normalizedAllowed;
-  })) {
+  // Check if the incoming request origin is in your allowed list
+  if (origin && allowedOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
-    response.headers.set("Access-Control-Allow-Credentials", "true");
-  } else {
-    // For public GET APIs, allow all origins as fallback
+  } else if (!origin) {
+    // Fallback for tools like Postman or server-side fetches
     response.headers.set("Access-Control-Allow-Origin", "*");
   }
-
+  
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   response.headers.set("Access-Control-Max-Age", "86400");
+  response.headers.set("Access-Control-Allow-Credentials", "true");
   return response;
 }
 

@@ -9,13 +9,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path,
-      },
-    },
+  '/api': {
+    target: 'https://shivay-video-admin.vercel.app', // Point local dev to your LIVE backend
+    changeOrigin: true,
+    secure: true,
+    rewrite: (path) => path,
+  },
+},
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
