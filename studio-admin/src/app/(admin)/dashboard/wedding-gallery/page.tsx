@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { CldUploadWidget } from "next-cloudinary";
-import { useToast } from "@/hooks/use-toast";
 
 interface WeddingGalleryImage {
   _id: string;
@@ -17,7 +16,10 @@ export default function WeddingGalleryManager() {
   const [images, setImages] = useState<WeddingGalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const { toast } = useToast();
+
+  const notify = (title: string, description?: string) => {
+    console.log(`[Wedding Gallery] ${title}${description ? `: ${description}` : ""}`);
+  };
 
   // Fetch images
   const fetchImages = async () => {
@@ -29,11 +31,7 @@ export default function WeddingGalleryManager() {
         setImages(result.data);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch wedding gallery images",
-        variant: "destructive",
-      });
+      notify("Error", "Failed to fetch wedding gallery images");
     } finally {
       setLoading(false);
     }
@@ -61,17 +59,10 @@ export default function WeddingGalleryManager() {
       const data = await response.json();
       if (data.success) {
         setImages([...images, data.data]);
-        toast({
-          title: "Success",
-          description: "Wedding gallery image uploaded successfully",
-        });
+        notify("Success", "Wedding gallery image uploaded successfully");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save image",
-        variant: "destructive",
-      });
+      notify("Error", "Failed to save image");
     } finally {
       setUploading(false);
     }
@@ -93,17 +84,10 @@ export default function WeddingGalleryManager() {
 
       if (response.ok) {
         setImages(images.filter((img) => img._id !== image._id));
-        toast({
-          title: "Success",
-          description: "Image deleted successfully",
-        });
+        notify("Success", "Image deleted successfully");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete image",
-        variant: "destructive",
-      });
+      notify("Error", "Failed to delete image");
     }
   };
 
@@ -130,10 +114,7 @@ export default function WeddingGalleryManager() {
     }
 
     setImages(newImages);
-    toast({
-      title: "Success",
-      description: "Images reordered successfully",
-    });
+    notify("Success", "Images reordered successfully");
   };
 
   const weddingCount = images.filter((img) => img.photoType === "wedding").length;
