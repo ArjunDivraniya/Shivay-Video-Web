@@ -44,7 +44,7 @@ function getToken(req: NextRequest) {
 }
 
 function addCorsHeaders(response: NextResponse, origin?: string | null) {
-  // Default allowed origins for production and local development
+  // Allow both local development and production frontends
   const defaultOrigins = [
     'http://localhost:8080',
     'http://localhost:5173',
@@ -57,11 +57,15 @@ function addCorsHeaders(response: NextResponse, origin?: string | null) {
     : defaultOrigins;
 
   // Check if origin is in allowed list
-  if (origin && allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+  if (origin && allowedOrigins.some(allowed => {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const normalizedAllowed = allowed.replace(/\/$/, '');
+    return normalizedOrigin === normalizedAllowed;
+  })) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
   } else {
-    // For public GET APIs, allow all origins
+    // For public GET APIs, allow all origins as fallback
     response.headers.set("Access-Control-Allow-Origin", "*");
   }
 
