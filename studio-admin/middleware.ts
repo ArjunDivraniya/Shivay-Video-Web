@@ -16,6 +16,7 @@ const PUBLIC_GET_APIS = [
   "/api/hero",
   "/api/services",
   "/api/gallery",
+  "/api/wedding-gallery",
   "/api/films",
   "/api/about",
   "/api/testimonials",

@@ -12,6 +12,7 @@ const links = [
   { href: "/services", label: "Services", icon: "🎯" },
   { href: "/weddings", label: "Wedding Stories", icon: "💒" },
   { href: "/gallery", label: "Photo Gallery", icon: "📸" },
+  { href: "/wedding-gallery", label: "Wedding Gallery", icon: "💍" },
   { href: "/films", label: "Films & Cinematics", icon: "🎬" },
   { href: "/reviews", label: "Client Reviews", icon: "⭐" },
   { href: "/footer", label: "Footer", icon: "🔗" },

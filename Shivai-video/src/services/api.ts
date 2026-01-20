@@ -37,6 +37,14 @@ export interface GalleryImage {
   isHighlight?: boolean;
 }
 
+export interface WeddingGalleryImage {
+  _id: string;
+  imageUrl: string;
+  photoType: "wedding" | "prewedding";
+  order: number;
+  createdAt: string;
+}
+
 export interface AboutData {
   _id?: string;
   experienceYears: number;
@@ -288,6 +296,17 @@ class ApiService {
       } catch (fallbackError) {
         return [];
       }
+    }
+  }
+
+  async getWeddingGallery(): Promise<WeddingGalleryImage[]> {
+    try {
+      const raw = await this.fetchData<any>('/wedding-gallery');
+      const data = this.asArray(raw);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Error fetching wedding gallery:', error);
+      return [];
     }
   }
 }

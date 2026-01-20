@@ -8,6 +8,7 @@ import WeddingStoriesSection from "@/components/sections/WeddingStoriesSection";
 import DualMarqueeGallerySection from "@/components/sections/DualMarqueeGallerySection";
 import ServicesSection from "@/components/sections/ServicesSection";
 import GallerySection from "@/components/sections/GallerySection";
+import WeddingGallerySection from "@/components/sections/WeddingGallerySection";
 import FilmsSection from "@/components/sections/FilmsSection";
 import ProcessSection from "@/components/sections/ProcessSection";
 import AboutSection from "@/components/sections/AboutSection";
@@ -48,6 +49,10 @@ const Index = () => {
 
         <section id="gallery">
           <GallerySection />
+        </section>
+
+        <section id="wedding-gallery">
+          <WeddingGallerySection />
         </section>
 
         <section id="films">
