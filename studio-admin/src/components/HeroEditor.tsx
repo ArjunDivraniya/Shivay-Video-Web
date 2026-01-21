@@ -233,11 +233,12 @@ export default function HeroEditor({
       <div>
         <h3 className="text-lg font-semibold mb-3">Live Preview</h3>
         <div
-          className="relative w-full aspect-video rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
+          className="relative w-full aspect-[4/5] sm:aspect-video rounded-lg overflow-hidden shadow-lg border-2 border-gray-300 bg-gray-200"
           style={{
-            backgroundImage: `url(${imageUrl})`,
+            backgroundImage: imageUrl ? `url(${imageUrl})` : "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 50%, #9ca3af 100%)",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: "center center",
+            minHeight: "320px",
           }}
         >
           {/* Overlay */}
@@ -248,7 +249,7 @@ export default function HeroEditor({
 
           {/* Content Container */}
           <div
-            className="absolute inset-0 flex transition-all duration-300"
+            className="absolute inset-0 flex transition-all duration-300 px-4 sm:px-6"
             style={{
               justifyContent: getFlexValue(styles.justifyContent),
               alignItems: getFlexValue(styles.alignItems),
@@ -256,11 +257,21 @@ export default function HeroEditor({
             }}
           >
             {/* Text Content */}
-            <div className="text-center px-6 z-10 max-w-lg">
+            <div
+              className="z-10 max-w-xl"
+              style={{
+                textAlign:
+                  styles.justifyContent === "flex-start"
+                    ? "left"
+                    : styles.justifyContent === "flex-end"
+                    ? "right"
+                    : "center",
+              }}
+            >
               {/* Location Tag */}
               <div className="mb-3">
                 <span
-                  className="text-xs md:text-sm tracking-widest uppercase font-semibold"
+                  className="text-xs md:text-sm tracking-widest uppercase font-semibold drop-shadow"
                   style={{ color: styles.textColor }}
                 >
                   {location}
@@ -269,7 +280,7 @@ export default function HeroEditor({
 
               {/* Title */}
               <h1
-                className="text-3xl md:text-5xl lg:text-6xl font-bold mb-2 drop-shadow-lg"
+                className="text-3xl md:text-5xl lg:text-6xl font-bold mb-2 drop-shadow-lg leading-tight"
                 style={{ color: styles.textColor }}
               >
                 {title}

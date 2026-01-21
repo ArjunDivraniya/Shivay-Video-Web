@@ -386,7 +386,7 @@ export default function ImageUploader({
       {/* Crop Modal */}
       {isModalOpen && imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] h-[90vh] sm:h-auto flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
               <div>
@@ -412,32 +412,34 @@ export default function ImageUploader({
               </button>
             </div>
 
-            {/* Cropper Area */}
-            <div className="relative flex-1 min-h-[400px] bg-slate-900 overflow-hidden">
-              <Cropper
-                image={imageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={aspectRatio}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-                objectFit="contain"
-                showGrid={true}
-                style={{
-                  containerStyle: {
-                    backgroundColor: "#0f172a",
-                  },
-                  cropAreaStyle: {
-                    border: "3px solid #3b82f6",
-                    boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
-                  },
-                }}
-              />
-            </div>
+            {/* Scrollable body for small screens */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Cropper Area */}
+              <div className="relative min-h-[280px] sm:min-h-[400px] bg-slate-900 overflow-hidden">
+                <Cropper
+                  image={imageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspectRatio}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                  objectFit="contain"
+                  showGrid={true}
+                  style={{
+                    containerStyle: {
+                      backgroundColor: "#0f172a",
+                    },
+                    cropAreaStyle: {
+                      border: "3px solid #3b82f6",
+                      boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
+                    },
+                  }}
+                />
+              </div>
 
-            {/* Controls & Progress */}
-            <div className="p-6 border-t bg-gradient-to-r from-gray-50 to-blue-50 space-y-4">
+              {/* Controls & Progress */}
+              <div className="p-6 border-t bg-gradient-to-r from-gray-50 to-blue-50 space-y-4">
               {/* Zoom Control */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">
@@ -510,37 +512,38 @@ export default function ImageUploader({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={closeModal}
-                  disabled={isUploading}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpload}
-                  disabled={isUploading || uploadError !== null}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : uploadError ? (
-                    <>
-                      <AlertCircle className="w-5 h-5" />
-                      <span>Try Again</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      <span>Upload Image</span>
-                    </>
-                  )}
-                </button>
+                {/* Action Buttons */}
+                <div className="flex gap-3 sticky bottom-0 bg-gradient-to-r from-gray-50 to-blue-50 pt-2 pb-1">
+                  <button
+                    onClick={closeModal}
+                    disabled={isUploading}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={isUploading || uploadError !== null}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : uploadError ? (
+                      <>
+                        <AlertCircle className="w-5 h-5" />
+                        <span>Try Again</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5" />
+                        <span>Upload Image</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
