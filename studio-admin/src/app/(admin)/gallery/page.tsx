@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useUpload } from "@/hooks/useUpload";
+import ImageUploader from "@/components/ImageUploader";
+import { Trash2, Plus } from "lucide-react";
 
 interface GalleryImage {
   _id: string;
@@ -23,9 +25,7 @@ export default function GalleryPage() {
   const [category, setCategory] = useState("Wedding");
   const [serviceType, setServiceType] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
-  const { uploading, progress, uploadMultipleFiles } = useUpload();
+  const [showUploader, setShowUploader] = useState(false);
 
   useEffect(() => {
     loadGallery();
@@ -56,82 +56,33 @@ export default function GalleryPage() {
     }
   };
 
-  const handleUploadImages = async (files: FileList) => {
-    if (files.length === 0) return;
-
-    setMessage(`Uploading ${files.length} image(s)...`);
-
+  const handleUploadComplete = async (data: {
+    url: string;
+    publicId: string;
+    width: number;
+    height: number;
+  }) => {
     try {
-      const fileArray = Array.from(files).filter((file) => {
-        if (!file.type.startsWith("image/")) {
-          setMessage(`✗ ${file.name} is not an image`);
-          return false;
-        }
-        return true;
+      const res = await fetch("/api/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: data.url,
+          imagePublicId: data.publicId,
+          category,
+          serviceType,
+        }),
       });
 
-      if (fileArray.length === 0) return;
+      if (!res.ok) throw new Error("Failed to save gallery image");
 
-      const uploadedFiles = await uploadMultipleFiles(fileArray, {
-        folder: "shivay-studio/gallery",
-        onProgress: (p) => {
-          setMessage(
-            `Uploading ${p.loaded} of ${p.total} files... ${p.percentage}%`
-          );
-        },
-        onError: (error) => {
-          setMessage(`✗ Error: ${error}`);
-        },
-      });
-
-      // Save all uploaded files to database
-      const savePromises = uploadedFiles.map(async (uploadData: any) => {
-        const dbRes = await fetch("/api/gallery", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageUrl: uploadData.secure_url,
-            imagePublicId: uploadData.public_id,
-            category,
-            serviceType,
-          }),
-        });
-
-        if (!dbRes.ok) throw new Error("Failed to save to database");
-        return await dbRes.json();
-      });
-
-      await Promise.all(savePromises);
-      setMessage(`✓ ${uploadedFiles.length} image(s) uploaded successfully!`);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setMessage("✓ Photo uploaded successfully!");
+      setTimeout(() => setMessage(""), 3000);
+      setShowUploader(false);
       await loadGallery();
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.add("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDragLeave = () => {
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleUploadImages(files);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
@@ -144,9 +95,10 @@ export default function GalleryPage() {
 
       setImages(images.filter((img) => img._id !== id));
       setMessage("✓ Photo deleted successfully");
+      setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       setMessage("✗ Failed to delete photo");
-      console.error(error);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
@@ -169,108 +121,88 @@ export default function GalleryPage() {
         </p>
       </div>
 
+      {/* Upload Button */}
+      <button
+        onClick={() => setShowUploader(!showUploader)}
+        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+      >
+        <Plus className="w-5 h-5" />
+        Add New Photo
+      </button>
+
       {/* Upload Section */}
-      <div className="card p-6 space-y-6 fade-in">
-        <h2 className="text-lg font-semibold">Upload Photos</h2>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              disabled={uploading}
-              className="input"
+      {showUploader && (
+        <div className="card p-6 space-y-6 fade-in border-2 border-blue-200 bg-blue-50">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Upload New Photo</h2>
+            <button
+              onClick={() => setShowUploader(false)}
+              className="text-gray-500 hover:text-gray-700"
             >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              ✕
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Service Type (Optional)</label>
-            <select
-              value={serviceType}
-              onChange={(e) => setServiceType(e.target.value)}
-              disabled={uploading}
-              className="input"
-            >
-              <option value="">No service type</option>
-              {Array.from(new Set([
-                ...SERVICE_TYPES,
-                ...services.map(s => s.serviceType)
-              ])).map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500">Link these photos to a specific service</p>
-          </div>
-        </div>
-
-        <div
-          ref={dragRef}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className="border-2 border-dashed border-[var(--border)] rounded-xl p-12 text-center cursor-pointer transition-all hover:border-[var(--accent)] hover:bg-[var(--primary)]/5"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => e.target.files && handleUploadImages(e.target.files)}
-            className="hidden"
-            disabled={uploading}
-          />
-          <div className="space-y-3">
-            <div className="text-5xl">📸</div>
-            <p className="text-lg font-medium text-[var(--foreground)]">
-              Drag & drop photos here
-            </p>
-            <p className="text-sm text-[var(--muted)]">
-              or click to browse • Multiple images supported
-            </p>
-          </div>
-        </div>
-
-        {message && (
-          <p
-            className={`text-sm p-3 rounded-lg ${
-              message.startsWith("✓")
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-red-50 text-red-700 border border-red-200"
-            }`}
-          >
-            {message}
-          </p>
-        )}
-
-        {uploading && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-              <p className="text-sm text-blue-700">
-                Uploading {progress.loaded} of {progress.total} files...
-              </p>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
-                style={{ width: `${progress.percentage}%` }}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="input"
               >
-                {progress.percentage > 10 && `${progress.percentage}%`}
-              </div>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Service Type (Optional)</label>
+              <select
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+                className="input"
+              >
+                <option value="">No service type</option>
+                {Array.from(new Set([
+                  ...SERVICE_TYPES,
+                  ...services.map(s => s.serviceType)
+                ])).map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500">Link this photo to a specific service</p>
             </div>
           </div>
-        )}
-      </div>
+
+          <ImageUploader
+            sectionType="square"
+            onUploadComplete={handleUploadComplete}
+            onError={(error) => {
+              setMessage(`✗ Error: ${error}`);
+              setTimeout(() => setMessage(""), 3000);
+            }}
+            label="Select Gallery Photo"
+          />
+
+          {message && (
+            <div
+              className={`text-sm p-3 rounded-lg transition-all ${
+                message.startsWith("✓")
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Category Stats */}
       <div className="card p-6 space-y-4">
@@ -281,22 +213,22 @@ export default function GalleryPage() {
               key={category}
               className={`p-3 rounded-lg border transition-all cursor-pointer ${
                 selectedCategory === category
-                  ? "border-[var(--primary)] bg-[var(--primary)]/10"
-                  : "border-[var(--border)] hover:border-[var(--accent)]"
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
               onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
             >
-              <p className="text-xs text-[var(--muted)]">{category}</p>
-              <p className="text-2xl font-semibold text-[var(--primary)]">{count}</p>
+              <p className="text-xs text-gray-600">{category}</p>
+              <p className="text-2xl font-bold text-blue-600">{count}</p>
             </div>
           ))}
         </div>
-        <p className="text-sm text-[var(--muted)]">
-          Total: <span className="font-semibold text-[var(--foreground)]">{images.length}</span> photos
+        <p className="text-sm text-gray-600">
+          Total: <span className="font-semibold text-gray-900">{images.length}</span> photos
           {selectedCategory && (
             <button
               onClick={() => setSelectedCategory(null)}
-              className="ml-3 text-xs text-[var(--primary)] underline"
+              className="ml-3 text-xs text-blue-600 underline hover:text-blue-700"
             >
               Clear filter
             </button>
@@ -310,13 +242,13 @@ export default function GalleryPage() {
           <h2 className="text-lg font-semibold">
             {selectedCategory ? `${selectedCategory} Photos` : "All Photos"}
           </h2>
-          <span className="text-sm text-[var(--muted)]">{filteredImages.length} photos</span>
+          <span className="text-sm text-gray-600">{filteredImages.length} photos</span>
         </div>
 
         {loading ? (
-          <p className="text-sm text-[var(--muted)]">Loading gallery...</p>
+          <p className="text-sm text-gray-600">Loading gallery...</p>
         ) : filteredImages.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">
+          <p className="text-sm text-gray-600">
             {selectedCategory
               ? `No photos in ${selectedCategory} category yet.`
               : "No photos yet. Start uploading!"}
@@ -326,7 +258,7 @@ export default function GalleryPage() {
             {filteredImages.map((image) => (
               <div
                 key={image._id}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-[var(--border)] hover:shadow-lg transition-shadow"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 hover:shadow-lg transition-all"
               >
                 <img
                   src={image.imageUrl}
@@ -342,8 +274,9 @@ export default function GalleryPage() {
                   </div>
                   <button
                     onClick={() => handleDelete(image._id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-lg px-3 py-1 text-xs hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1"
                   >
+                    <Trash2 className="w-3 h-3" />
                     Delete
                   </button>
                 </div>

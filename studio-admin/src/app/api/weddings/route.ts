@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import WeddingStory from "@/models/WeddingStory";
 import { handleOptions, createCorsResponse } from "@/lib/cors";
+import { deleteAsset } from "@/lib/cloudinary";
+
+const MAX_WEDDING_STORIES = 5;
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +46,31 @@ export async function POST(req: NextRequest) {
       coverPhoto: body.coverPhoto,
       gallery: body.gallery || [],
     });
+
+    // Auto-delete oldest wedding stories if exceeds limit
+    const totalCount = await WeddingStory.countDocuments();
+    if (totalCount > MAX_WEDDING_STORIES) {
+      const excessCount = totalCount - MAX_WEDDING_STORIES;
+      // Get oldest entries to delete
+      const oldestWeddings = await WeddingStory.find()
+        .sort({ createdAt: 1 })
+        .limit(excessCount);
+      
+      // Delete each old wedding and its Cloudinary assets
+      for (const oldWedding of oldestWeddings) {
+        // Delete cover photo from Cloudinary
+        if (oldWedding.coverPhoto?.publicId) {
+          try {
+            await deleteAsset(oldWedding.coverPhoto.publicId);
+          } catch (err) {
+            console.error("Failed to delete old wedding cover from Cloudinary:", err);
+          }
+        }
+        // Delete from database
+        await WeddingStory.findByIdAndDelete(oldWedding._id);
+      }
+      console.log(`Auto-deleted ${excessCount} old wedding stories`);
+    }
 
     return createCorsResponse(wedding, 201, req);
   } catch (error) {

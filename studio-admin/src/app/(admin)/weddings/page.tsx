@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUpload } from "@/hooks/useUpload";
+import ImageUploader from "@/components/ImageUploader";
+import { Trash2, Plus, X } from "lucide-react";
 
 interface Wedding {
   _id: string;
@@ -42,12 +44,10 @@ export default function WeddingsPage() {
   const [coverPhotoId, setCoverPhotoId] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [showcasePhotoType, setShowcasePhotoType] = useState<"wedding" | "prewedding">("wedding");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploading, progress, uploadMultipleFiles } = useUpload();
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
   const showcaseDragRef = useRef<HTMLDivElement>(null);
   const showcaseFileInputRef = useRef<HTMLInputElement>(null);
-  const { uploading, progress, uploadFile, uploadMultipleFiles } = useUpload();
 
   useEffect(() => {
     loadWeddings();
@@ -91,33 +91,16 @@ export default function WeddingsPage() {
     }
   };
 
-  const handleUploadCover = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setMessage("✗ Please select an image file");
-      return;
-    }
-
-    try {
-      setMessage("Uploading cover photo...");
-      
-      const uploadData: any = await uploadFile(file, {
-        folder: "shivay-studio/weddings",
-        onProgress: (p) => {
-          setMessage(`Uploading cover photo... ${p.percentage}%`);
-        },
-        onError: (error) => {
-          setMessage(`✗ Error: ${error}`);
-        },
-        onSuccess: () => {
-          setMessage("✓ Cover photo uploaded");
-        },
-      });
-
-      setCoverPhotoUrl(uploadData.secure_url);
-      setCoverPhotoId(uploadData.public_id);
-    } catch (error: any) {
-      setMessage(`✗ Error: ${error.message}`);
-    }
+  const handleCoverPhotoUploadComplete = (data: {
+    url: string;
+    publicId: string;
+    width: number;
+    height: number;
+  }) => {
+    setCoverPhotoUrl(data.url);
+    setCoverPhotoId(data.publicId);
+    setMessage("✓ Cover photo uploaded successfully");
+    setTimeout(() => setMessage(""), 3000);
   };
 
   const handleUploadGallery = async (files: FileList) => {
@@ -443,40 +426,16 @@ export default function WeddingsPage() {
         {/* Cover Photo */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Cover Photo</label>
-          <div
-            ref={dragRef}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center cursor-pointer transition-all hover:border-[var(--accent)] hover:bg-[var(--primary)]/5"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files && handleUploadCover(e.target.files[0])}
-              className="hidden"
-              disabled={uploading}
-            />
-            {coverPhotoUrl ? (
-              <div className="space-y-2">
-                <img
-                  src={coverPhotoUrl}
-                  alt="Cover"
-                  className="w-48 h-32 object-cover rounded-lg mx-auto"
-                />
-                <p className="text-xs text-green-600">✓ Cover photo selected</p>
-                <p className="text-xs text-[var(--muted)]">Click to change</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-4xl">📷</div>
-                <p className="text-sm font-medium">Drag & drop cover photo here</p>
-                <p className="text-xs text-[var(--muted)]">or click to browse</p>
-              </div>
-            )}
-          </div>
+          <ImageUploader
+            sectionType="square"
+            onUploadComplete={handleCoverPhotoUploadComplete}
+            onError={(error) => {
+              setMessage(`✗ Error: ${error}`);
+              setTimeout(() => setMessage(""), 3000);
+            }}
+            label="Select Cover Photo"
+            existingImageUrl={coverPhotoUrl}
+          />
         </div>
 
         {/* Gallery Upload */}

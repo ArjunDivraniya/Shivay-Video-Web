@@ -21,3 +21,22 @@ export function getCloudinary() {
 export async function deleteAsset(publicId: string) {
   return cloudinary.uploader.destroy(publicId, { invalidate: true });
 }
+
+export async function deleteVideoAsset(publicId: string) {
+  return cloudinary.uploader.destroy(publicId, { 
+    resource_type: "video",
+    invalidate: true 
+  });
+}
+
+export function extractPublicId(url: string): string | null {
+  try {
+    // Extract public ID from Cloudinary URL
+    // Example: https://res.cloudinary.com/cloudname/image/upload/v123456/folder/image.jpg
+    const match = url.match(/\/(?:image|video)\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/);
+    return match ? match[1] : null;
+  } catch (error) {
+    console.error("Failed to extract public ID from URL:", url, error);
+    return null;
+  }
+}

@@ -91,17 +91,23 @@ const FilmsSection = () => {
     setTimeout(() => setIsTransitioning(false), TRANSITION_DURATION);
   }, [films.length, isTransitioning]);
 
-  // Handle user interaction - pause temporarily
+  // Handle user interaction - reset autoplay timer
   const handleUserInteraction = useCallback(() => {
     setUserInteracted(true);
     
-    // Clear existing pause timeout
+    // Clear existing timers
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
     }
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    if (progressAnimationRef.current) {
+      progressAnimationRef.current.kill();
+    }
     
-    // Don't set isPaused to true - just reset the timer
-    // The timer will be reset by the useEffect watching currentIndex
+    // The autoplay timer will be reset by the useEffect watching currentIndex
+    // This ensures that after manual navigation, autoplay resumes with full duration
   }, []);
 
   // TV screen glow pulse effect
@@ -150,37 +156,84 @@ const FilmsSection = () => {
   useEffect(() => {
     if (!videoRef.current) return;
 
-    if (isVisible && !isTransitioning) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {
-        // Autoplay might be blocked; ensure muted then retry once
-        videoRef.current?.play().catch(() => {});
-      });
+    const video = videoRef.current;
+
+    if (isVisible && !isTransitioning && !isPaused) {
+      // Force muted to ensure autoplay works
+      video.muted = true;
+      video.volume = 0;
+      
+      // Load the video first
+      video.load();
+      
+      // Try to play after a short delay
+      const playTimeout = setTimeout(() => {
+        if (videoRef.current) {
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log('Video playing successfully');
+            }).catch((error) => {
+              console.log('Autoplay prevented:', error);
+              // Retry with user interaction on click
+              const retryPlay = () => {
+                if (videoRef.current) {
+                  videoRef.current.muted = true;
+                  videoRef.current.volume = 0;
+                  videoRef.current.play().catch(() => {});
+                  document.removeEventListener('click', retryPlay);
+                }
+              };
+              document.addEventListener('click', retryPlay, { once: true });
+            });
+          }
+        }
+      }, 100);
+      
       triggerScreenPulse();
+      
+      return () => clearTimeout(playTimeout);
     } else {
-      videoRef.current.pause();
+      video.pause();
     }
-  }, [isVisible, currentIndex, isTransitioning, triggerScreenPulse]);
+  }, [isVisible, currentIndex, isTransitioning, isPaused, triggerScreenPulse]);
 
   // Ensure new video starts playing after index change (e.g., Next/Prev)
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isPaused) return;
 
     const el = videoRef.current;
     const tryPlay = () => {
+      // Always ensure muted for autoplay
       el.muted = true;
-      el.play().catch(() => {
-        // best-effort; browsers may block but we already set muted
-      });
+      el.volume = 0;
+      el.load();
+      
+      // Wait a bit for video to load
+      setTimeout(() => {
+        const playPromise = el.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log('Video transition play successful');
+          }).catch((error) => {
+            console.log('Video play prevented:', error);
+            // Try again on next user interaction
+            const handler = () => {
+              el.muted = true;
+              el.volume = 0;
+              el.play().catch(() => {});
+              document.removeEventListener('click', handler);
+            };
+            document.addEventListener('click', handler, { once: true });
+          });
+        }
+      }, 150);
     };
 
     if (isVisible && !isTransitioning) {
-      const raf = requestAnimationFrame(() => {
-        setTimeout(tryPlay, 30);
-      });
-      return () => cancelAnimationFrame(raf);
+      tryPlay();
     }
-  }, [currentIndex, isVisible, isTransitioning]);
+  }, [currentIndex, isVisible, isTransitioning, isPaused]);
 
   // Intersection Observer for section visibility
   useEffect(() => {
@@ -334,21 +387,33 @@ const FilmsSection = () => {
                             poster={currentFilm.thumbnail}
                             loop
                             muted
-                            autoPlay
                             playsInline
+                            preload="auto"
                             className="w-full h-full object-cover"
-                            onLoadedMetadata={() => {
-                              if (videoRef.current) {
-                                videoRef.current.muted = true;
-                                videoRef.current.play().catch(() => {
-                                  videoRef.current?.pause();
+                            onLoadedMetadata={(e) => {
+                              const video = e.currentTarget;
+                              video.muted = true;
+                              video.volume = 0;
+                              if (!isPaused && isVisible) {
+                                setTimeout(() => {
+                                  video.play().catch((error) => {
+                                    console.log('Video play failed on metadata:', error);
+                                  });
+                                }, 100);
+                              }
+                            }}
+                            onCanPlay={(e) => {
+                              const video = e.currentTarget;
+                              video.muted = true;
+                              video.volume = 0;
+                              if (!isPaused && isVisible) {
+                                video.play().catch((err) => {
+                                  console.log('Video play failed on can play:', err);
                                 });
                               }
                             }}
-                            onCanPlay={() => {
-                              if (videoRef.current && isVisible) {
-                                videoRef.current.play().catch(() => {});
-                              }
+                            onError={(e) => {
+                              console.error('Video load error:', e);
                             }}
                           />
                         ) : (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import WeddingStory from "@/models/WeddingStory";
+import { deleteAsset } from "@/lib/cloudinary";
 
 // GET: Single wedding
 export async function GET(
@@ -68,11 +69,23 @@ export async function DELETE(
     await dbConnect();
     const { id } = await params;
 
-    const wedding = await WeddingStory.findByIdAndDelete(id);
+    const wedding = await WeddingStory.findById(id);
 
     if (!wedding) {
       return NextResponse.json({ error: "Wedding not found" }, { status: 404 });
     }
+
+    // Delete cover photo from Cloudinary
+    if (wedding.coverPhoto?.publicId) {
+      try {
+        await deleteAsset(wedding.coverPhoto.publicId);
+      } catch (err) {
+        console.error("Failed to delete cover photo from Cloudinary:", err);
+      }
+    }
+
+    // Delete wedding from database
+    await WeddingStory.findByIdAndDelete(id);
 
     return NextResponse.json({ message: "Wedding deleted successfully" });
   } catch (error) {

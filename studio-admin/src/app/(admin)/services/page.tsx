@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useUpload } from "@/hooks/useUpload";
+import { useEffect, useState } from "react";
+import ImageUploader from "@/components/ImageUploader";
+import { Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 
 interface Service {
   _id: string;
@@ -60,9 +61,7 @@ export default function ServicesPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [imagePublicId, setImagePublicId] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
-  const { uploading, progress, uploadFile } = useUpload();
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     loadServices();
@@ -82,31 +81,16 @@ export default function ServicesPage() {
     }
   };
 
-  const handleUploadImage = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setMessage("✗ Please select an image file");
-      return;
-    }
-
-    try {
-      setMessage("Uploading image...");
-
-      const uploadData: any = await uploadFile(file, {
-        folder: "shivay-studio/services",
-        onProgress: (p) => {
-          setMessage(`Uploading image... ${p.percentage}%`);
-        },
-        onError: (error) => {
-          setMessage(`✗ Error: ${error}`);
-        },
-      });
-
-      setImageUrl(uploadData.secure_url);
-      setImagePublicId(uploadData.public_id);
-      setMessage("✓ Image uploaded successfully");
-    } catch (error: any) {
-      setMessage(`✗ Error: ${error.message}`);
-    }
+  const handleUploadComplete = (data: {
+    url: string;
+    publicId: string;
+    width: number;
+    height: number;
+  }) => {
+    setImageUrl(data.url);
+    setImagePublicId(data.publicId);
+    setMessage("✓ Image uploaded successfully");
+    setTimeout(() => setMessage(""), 3000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,37 +140,12 @@ export default function ServicesPage() {
       setImagePublicId("");
       setIsActive(true);
       setShowSuggestions(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setUploadError("");
       await loadServices();
     } catch (error: any) {
       setMessage(`✗ Error: ${error.message}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.add("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDragLeave = () => {
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleUploadImage(files[0]);
     }
   };
 
@@ -344,40 +303,17 @@ export default function ServicesPage() {
         {/* Image Upload */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Service Image</label>
-          <div
-            ref={dragRef}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center cursor-pointer transition-all hover:border-[var(--accent)] hover:bg-[var(--primary)]/5"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files && handleUploadImage(e.target.files[0])}
-              className="hidden"
-              disabled={uploading}
-            />
-            {imageUrl ? (
-              <div className="space-y-2">
-                <img
-                  src={imageUrl}
-                  alt="Service"
-                  className="w-48 h-32 object-cover rounded-lg mx-auto"
-                />
-                <p className="text-xs text-green-600">✓ Image selected</p>
-                <p className="text-xs text-[var(--muted)]">Click to change</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-4xl">🎯</div>
-                <p className="text-sm font-medium">Drag & drop service image here</p>
-                <p className="text-xs text-[var(--muted)]">or click to browse</p>
-              </div>
-            )}
-          </div>
+          <ImageUploader
+            sectionType="square"
+            onUploadComplete={handleUploadComplete}
+            onError={(error) => {
+              setUploadError(error);
+              setMessage(`✗ Error: ${error}`);
+              setTimeout(() => setMessage(""), 3000);
+            }}
+            label="Select Service Image"
+            existingImageUrl={imageUrl}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -405,27 +341,10 @@ export default function ServicesPage() {
           </p>
         )}
 
-        {uploading && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
-              <p className="text-sm text-blue-700">Uploading image...</p>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] text-white font-semibold"
-                style={{ width: `${progress?.percentage || 0}%` }}
-              >
-                {(progress?.percentage || 0) > 10 && `${progress?.percentage}%`}
-              </div>
-            </div>
-          </div>
-        )}
-
         <button
           type="submit"
-          disabled={loading || uploading}
-          className="w-full px-4 py-3 bg-[var(--primary)] text-white rounded-xl font-medium hover:bg-[#5a1922] disabled:opacity-60 transition-colors"
+          disabled={loading}
+          className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors"
         >
           {loading ? "Creating..." : "Add Service"}
         </button>
@@ -443,42 +362,46 @@ export default function ServicesPage() {
             {activeServices.map((service) => (
               <div
                 key={service._id}
-                className="border border-[var(--border)] rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+                className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all"
               >
-                <div className="relative aspect-video bg-[var(--border)]">
+                <div className="relative aspect-square bg-gray-100 overflow-hidden">
                   <img
                     src={service.imageUrl}
                     alt={service.serviceName}
                     className="w-full h-full object-cover"
                   />
-                  <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                  <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
                     Active
                   </span>
                 </div>
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold text-[var(--foreground)]">{service.serviceName}</h3>
-                  <p className="text-sm text-[var(--muted)]">
-                    📂 {service.serviceType}
-                  </p>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{service.serviceName}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      📂 {service.serviceType}
+                    </p>
+                  </div>
                   {service.description && (
-                    <p className="text-xs text-[var(--muted)] line-clamp-2">
+                    <p className="text-xs text-gray-600 line-clamp-2">
                       {service.description}
                     </p>
                   )}
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="text-xs text-gray-500">
                     {new Date(service.createdAt).toLocaleDateString()}
                   </p>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 pt-2 border-t border-gray-200">
                     <button
                       onClick={() => toggleActive(service)}
-                      className="flex-1 text-xs text-yellow-600 hover:bg-yellow-50 py-2 rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 text-xs text-yellow-600 hover:bg-yellow-50 py-2 rounded-lg transition-colors"
                     >
-                      Deactivate
+                      <ToggleRight className="w-3.5 h-3.5" />
+                      Hide
                     </button>
                     <button
                       onClick={() => handleDelete(service._id)}
-                      className="flex-1 text-xs text-red-600 hover:bg-red-50 py-2 rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 text-xs text-red-600 hover:bg-red-50 py-2 rounded-lg transition-colors"
                     >
+                      <Trash2 className="w-3.5 h-3.5" />
                       Delete
                     </button>
                   </div>
@@ -501,39 +424,43 @@ export default function ServicesPage() {
             {inactiveServices.map((service) => (
               <div
                 key={service._id}
-                className="border border-[var(--border)] rounded-xl overflow-hidden opacity-60"
+                className="border border-gray-300 rounded-xl overflow-hidden opacity-60 hover:opacity-80 transition-opacity"
               >
-                <div className="relative aspect-video bg-[var(--border)]">
+                <div className="relative aspect-square bg-gray-100">
                   <img
                     src={service.imageUrl}
                     alt={service.serviceName}
                     className="w-full h-full object-cover grayscale"
                   />
-                  <span className="absolute top-2 right-2 bg-gray-500 text-white text-xs px-2 py-1 rounded">
-                    Inactive
+                  <span className="absolute top-2 right-2 bg-gray-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+                    Hidden
                   </span>
                 </div>
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold text-[var(--foreground)]">{service.serviceName}</h3>
-                  <p className="text-sm text-[var(--muted)]">
-                    📂 {service.serviceType}
-                  </p>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{service.serviceName}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      📂 {service.serviceType}
+                    </p>
+                  </div>
                   {service.description && (
-                    <p className="text-xs text-[var(--muted)] line-clamp-2">
+                    <p className="text-xs text-gray-600 line-clamp-2">
                       {service.description}
                     </p>
                   )}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 pt-2 border-t border-gray-200">
                     <button
                       onClick={() => toggleActive(service)}
-                      className="flex-1 text-xs text-green-600 hover:bg-green-50 py-2 rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 text-xs text-green-600 hover:bg-green-50 py-2 rounded-lg transition-colors"
                     >
-                      Activate
+                      <ToggleLeft className="w-3.5 h-3.5" />
+                      Show
                     </button>
                     <button
                       onClick={() => handleDelete(service._id)}
-                      className="flex-1 text-xs text-red-600 hover:bg-red-50 py-2 rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 text-xs text-red-600 hover:bg-red-50 py-2 rounded-lg transition-colors"
                     >
+                      <Trash2 className="w-3.5 h-3.5" />
                       Delete
                     </button>
                   </div>

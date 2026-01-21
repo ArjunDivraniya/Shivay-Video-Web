@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Film from "@/models/Film";
+import { deleteVideoAsset } from "@/lib/cloudinary";
 
 // PUT: Update film title
 export async function PUT(
@@ -43,11 +44,23 @@ export async function DELETE(
     await dbConnect();
     const { id } = await params;
 
-    const film = await Film.findByIdAndDelete(id);
+    const film = await Film.findById(id);
 
     if (!film) {
       return NextResponse.json({ error: "Film not found" }, { status: 404 });
     }
+
+    // Delete video from Cloudinary
+    if (film.videoPublicId) {
+      try {
+        await deleteVideoAsset(film.videoPublicId);
+      } catch (err) {
+        console.error("Failed to delete video from Cloudinary:", err);
+      }
+    }
+
+    // Delete film from database
+    await Film.findByIdAndDelete(id);
 
     return NextResponse.json({ message: "Film deleted successfully" });
   } catch (error) {

@@ -1,7 +1,8 @@
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Calendar, MapPin, PartyPopper, Heart, Sparkles, Users, Briefcase, Camera } from "lucide-react";
+import { apiService, Service } from "@/services/api";
 
 // Category themes with unique styling
 const categoryThemes = {
@@ -88,12 +89,30 @@ const categoryThemes = {
   }
 };
 
-const eventTypes = Object.keys(categoryThemes);
+// Normalize category text to Title Case for matching themes
+const normalizeCategory = (value: string) => {
+  return value
+    ?.trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+// Resolve theme for a category, falling back to "Other"
+const getTheme = (category: string) => {
+  const normalized = normalizeCategory(category || "");
+  return categoryThemes[category as keyof typeof categoryThemes]
+    || categoryThemes[normalized as keyof typeof categoryThemes]
+    || categoryThemes.Other;
+};
 
 const ContactSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const [selectedEvent, setSelectedEvent] = useState("Wedding");
+  const [services, setServices] = useState<Service[]>([]);
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     city: "",
@@ -101,7 +120,55 @@ const ContactSection = () => {
     message: "",
   });
 
-  const currentTheme = categoryThemes[selectedEvent as keyof typeof categoryThemes] || categoryThemes.Other;
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        console.log('[ContactSection] Fetching services...');
+        const data = await apiService.getServices();
+        console.log('[ContactSection] Fetched services:', data);
+        
+        if (data && data.length > 0) {
+          setServices(data);
+          
+          // Extract unique service types/categories
+          const categories = [...new Set(
+            data
+              .filter(s => s.serviceType)
+              .map(s => normalizeCategory(s.serviceType as string))
+          )];
+          
+          // Add "Other" as fallback
+          if (!categories.includes("Other")) {
+            categories.push("Other");
+          }
+          
+          console.log('[ContactSection] Categories:', categories);
+          setEventTypes(categories);
+          
+          // Set first category as default
+          if (categories.length > 0) {
+            setSelectedEvent(categories[0]);
+          }
+        } else {
+          // Fallback to hardcoded categories
+          const fallbackTypes = Object.keys(categoryThemes);
+          setEventTypes(fallbackTypes);
+          setSelectedEvent(fallbackTypes[0]);
+        }
+      } catch (error) {
+        console.error('[ContactSection] Failed to load services:', error);
+        // Fallback to hardcoded categories
+        const fallbackTypes = Object.keys(categoryThemes);
+        setEventTypes(fallbackTypes);
+        setSelectedEvent(fallbackTypes[0]);
+      }
+    };
+    
+    fetchServices();
+  }, []);
+
+  // Get theme for selected event, fallback to Other if not found
+  const currentTheme = getTheme(selectedEvent);
   const ThemeIcon = currentTheme.icon;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -221,7 +288,9 @@ const ContactSection = () => {
                     </div>
                     <div className="flex flex-wrap gap-3 justify-center max-w-2xl mx-auto">
                       {eventTypes.map((event, index) => {
-                        const EventIcon = categoryThemes[event as keyof typeof categoryThemes].icon;
+                        // Get theme for this event, fallback to Other theme if not found
+                        const theme = getTheme(event);
+                        const EventIcon = theme.icon;
                         return (
                           <motion.button
                             key={event}
@@ -238,9 +307,9 @@ const ContactSection = () => {
                                 : "hover:shadow-md"
                             }`}
                             style={{
-                              backgroundColor: selectedEvent === event ? currentTheme.accentColor : "white",
-                              borderColor: selectedEvent === event ? currentTheme.accentColor : currentTheme.borderColor,
-                              color: selectedEvent === event ? "white" : currentTheme.textColor
+                              backgroundColor: selectedEvent === event ? theme.accentColor : "white",
+                              borderColor: selectedEvent === event ? theme.accentColor : theme.borderColor,
+                              color: selectedEvent === event ? "white" : theme.textColor
                             }}
                           >
                             <EventIcon className="w-4 h-4" />
@@ -250,8 +319,8 @@ const ContactSection = () => {
                                 layoutId="selectedBadge"
                                 className="absolute inset-0 rounded-full"
                                 style={{ 
-                                  border: `2px solid ${currentTheme.accentColor}`,
-                                  boxShadow: `0 0 20px ${currentTheme.accentColor}60`
+                                  border: `2px solid ${theme.accentColor}`,
+                                  boxShadow: `0 0 20px ${theme.accentColor}60`
                                 }}
                               />
                             )}
