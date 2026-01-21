@@ -122,22 +122,6 @@ const WeddingGallerySection = () => {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       loading="lazy"
                     />
-
-                    {/* Overlay - No category shown, just gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {/* Photo Type Badge - Only on hover, positioned at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span
-                        className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-                          image.photoType === "wedding"
-                            ? "bg-white/90 text-gray-900"
-                            : "bg-purple-500/90 text-white"
-                        }`}
-                      >
-                        {image.photoType === "wedding" ? "Wedding" : "Prewedding"}
-                      </span>
-                    </div>
                   </div>
                 );
               })}

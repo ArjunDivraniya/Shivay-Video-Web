@@ -177,31 +177,6 @@ export default function WeddingsPage() {
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.add("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDragLeave = () => {
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragRef.current) {
-      dragRef.current.classList.remove("border-[var(--accent)]", "bg-[var(--primary)]/5");
-    }
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleUploadCover(files[0]);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this wedding story? This action cannot be undone.")) return;
 
