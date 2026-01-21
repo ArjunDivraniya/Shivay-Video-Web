@@ -5,6 +5,9 @@ import { Trash2, Copy } from "lucide-react";
 
 interface HeroStyles {
   textColor: string;
+  studioNameColor?: string;
+  locationColor?: string;
+  taglineColor?: string;
   overlayOpacity: number;
   justifyContent: "flex-start" | "flex-center" | "flex-end";
   alignItems: "flex-start" | "flex-center" | "flex-end";
@@ -22,6 +25,9 @@ interface HeroEditorProps {
 
 const defaultStyles: HeroStyles = {
   textColor: "#ffffff",
+  studioNameColor: "#ffffff",
+  locationColor: "#ffffff",
+  taglineColor: "#ffffff",
   overlayOpacity: 0.5,
   justifyContent: "flex-center",
   alignItems: "flex-center",
@@ -55,6 +61,18 @@ export default function HeroEditor({
     if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value) || value === "") {
       setStyles({ ...styles, textColor: value });
     }
+  };
+
+  const handleStudioNameColorChange = (color: string) => {
+    setStyles({ ...styles, studioNameColor: color });
+  };
+
+  const handleLocationColorChange = (color: string) => {
+    setStyles({ ...styles, locationColor: color });
+  };
+
+  const handleTaglineColorChange = (color: string) => {
+    setStyles({ ...styles, taglineColor: color });
   };
 
   const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,6 +166,107 @@ export default function HeroEditor({
                 </span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Individual Text Element Colors */}
+        <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold mb-3">Element Colors</h3>
+
+          {/* Studio Name Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Studio Name Color</label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={styles.studioNameColor || "#ffffff"}
+                onChange={(e) => handleStudioNameColorChange(e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer border-2 border-gray-300 hover:border-purple-400 transition"
+              />
+              <div className="flex-1 grid grid-cols-5 gap-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => handleStudioNameColorChange(color.value)}
+                    className={`p-2 rounded border-2 transition ${
+                      styles.studioNameColor === color.value
+                        ? "border-purple-500 ring-2 ring-purple-300"
+                        : "border-gray-300 hover:border-purple-400"
+                    }`}
+                    title={color.name}
+                  >
+                    <div
+                      className="w-full h-4 rounded"
+                      style={{ backgroundColor: color.value }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Location Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location Tag Color</label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={styles.locationColor || "#ffffff"}
+                onChange={(e) => handleLocationColorChange(e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer border-2 border-gray-300 hover:border-green-400 transition"
+              />
+              <div className="flex-1 grid grid-cols-5 gap-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => handleLocationColorChange(color.value)}
+                    className={`p-2 rounded border-2 transition ${
+                      styles.locationColor === color.value
+                        ? "border-green-500 ring-2 ring-green-300"
+                        : "border-gray-300 hover:border-green-400"
+                    }`}
+                    title={color.name}
+                  >
+                    <div
+                      className="w-full h-4 rounded"
+                      style={{ backgroundColor: color.value }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Tagline Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tagline/Subtitle Color</label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={styles.taglineColor || "#ffffff"}
+                onChange={(e) => handleTaglineColorChange(e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer border-2 border-gray-300 hover:border-amber-400 transition"
+              />
+              <div className="flex-1 grid grid-cols-5 gap-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => handleTaglineColorChange(color.value)}
+                    className={`p-2 rounded border-2 transition ${
+                      styles.taglineColor === color.value
+                        ? "border-amber-500 ring-2 ring-amber-300"
+                        : "border-gray-300 hover:border-amber-400"
+                    }`}
+                    title={color.name}
+                  >
+                    <div
+                      className="w-full h-4 rounded"
+                      style={{ backgroundColor: color.value }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -272,7 +391,7 @@ export default function HeroEditor({
               <div className="mb-3">
                 <span
                   className="text-xs md:text-sm tracking-widest uppercase font-semibold drop-shadow"
-                  style={{ color: styles.textColor }}
+                  style={{ color: styles.locationColor || styles.textColor }}
                 >
                   {location}
                 </span>
@@ -281,7 +400,7 @@ export default function HeroEditor({
               {/* Title */}
               <h1
                 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-2 drop-shadow-lg leading-tight"
-                style={{ color: styles.textColor }}
+                style={{ color: styles.studioNameColor || styles.textColor }}
               >
                 {title}
               </h1>
@@ -289,7 +408,7 @@ export default function HeroEditor({
               {/* Subtitle */}
               <p
                 className="text-lg md:text-2xl italic drop-shadow-md"
-                style={{ color: styles.textColor }}
+                style={{ color: styles.taglineColor || styles.textColor }}
               >
                 {subtitle}
               </p>

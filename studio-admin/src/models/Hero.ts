@@ -10,6 +10,9 @@ export interface IHero extends Document {
   location?: string;
   styles?: {
     textColor: string;
+    studioNameColor?: string;
+    locationColor?: string;
+    taglineColor?: string;
     overlayOpacity: number;
     justifyContent: "flex-start" | "flex-center" | "flex-end";
     alignItems: "flex-start" | "flex-center" | "flex-end";
@@ -29,6 +32,9 @@ const HeroSchema = new Schema<IHero>(
     location: { type: String, default: "Junagadh • Gujarat" },
     styles: {
       textColor: { type: String, default: "#ffffff" },
+      studioNameColor: { type: String, default: "#ffffff" },
+      locationColor: { type: String, default: "#ffffff" },
+      taglineColor: { type: String, default: "#ffffff" },
       overlayOpacity: { type: Number, default: 0.5, min: 0, max: 0.9 },
       justifyContent: { type: String, default: "flex-center" },
       alignItems: { type: String, default: "flex-center" },

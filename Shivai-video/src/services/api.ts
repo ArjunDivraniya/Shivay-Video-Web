@@ -18,6 +18,9 @@ export interface HeroData {
   subtitle?: string;
   styles?: {
     textColor: string;
+    studioNameColor?: string;
+    locationColor?: string;
+    taglineColor?: string;
     overlayOpacity: number;
     justifyContent: "flex-start" | "flex-center" | "flex-end";
     alignItems: "flex-start" | "flex-center" | "flex-end";
@@ -132,12 +135,15 @@ class ApiService {
     mobileImageUrl: data?.mobileImageUrl || null,
     title: data?.title,
     subtitle: data?.subtitle,
-    styles: data?.styles || {
-      textColor: '#ffffff',
-      overlayOpacity: 0.5,
-      justifyContent: 'flex-center',
-      alignItems: 'flex-center',
-      verticalSpacing: 0,
+    styles: {
+      textColor: data?.styles?.textColor || '#ffffff',
+      studioNameColor: data?.styles?.studioNameColor || data?.styles?.textColor || '#ffffff',
+      locationColor: data?.styles?.locationColor || data?.styles?.textColor || '#ffffff',
+      taglineColor: data?.styles?.taglineColor || data?.styles?.textColor || '#ffffff',
+      overlayOpacity: data?.styles?.overlayOpacity || 0.5,
+      justifyContent: data?.styles?.justifyContent || 'flex-center',
+      alignItems: data?.styles?.alignItems || 'flex-center',
+      verticalSpacing: data?.styles?.verticalSpacing || 0,
     },
   });
 

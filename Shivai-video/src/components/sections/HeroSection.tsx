@@ -7,6 +7,9 @@ import heroImage from "@/assets/hero-wedding.jpg";
 
 interface HeroStyles {
   textColor: string;
+  studioNameColor?: string;
+  locationColor?: string;
+  taglineColor?: string;
   overlayOpacity: number;
   justifyContent: "flex-start" | "flex-center" | "flex-end";
   alignItems: "flex-start" | "flex-center" | "flex-end";
@@ -38,6 +41,8 @@ const HeroSection = () => {
     const fetchHeroData = async () => {
       const data = await apiService.getHeroData();
       if (data) {
+        console.log('🎬 Hero Data Fetched:', data);
+        console.log('🎨 Hero Styles:', data?.styles);
         setHeroData(data);
       }
     };
@@ -55,6 +60,25 @@ const HeroSection = () => {
 
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleViewStories = () => {
+    scrollToSection("stories");
+  };
+
+  const handleWatchReel = () => {
+    scrollToSection("films");
+  };
+
+  const handleBookDate = () => {
+    scrollToSection("contact");
   };
 
   const styles = heroData?.styles || {
@@ -120,7 +144,7 @@ const HeroSection = () => {
           >
             <span 
               className="font-body text-sm tracking-widest-xl uppercase drop-shadow-lg"
-              style={{ color: styles.textColor }}
+              style={{ color: styles.locationColor || styles.textColor }}
             >
               {heroData?.location || "Junagadh • Gujarat"}
             </span>
@@ -132,7 +156,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1 }}
             className="font-display text-5xl md:text-7xl lg:text-8xl font-semibold mb-4 drop-shadow-lg"
-            style={{ color: styles.textColor }}
+            style={{ color: styles.studioNameColor || styles.textColor }}
           >
             {heroData?.studioName || "Shivay Video"}
           </motion.h1>
@@ -143,26 +167,10 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.8 }}
             className="font-display text-xl md:text-2xl italic mb-12 max-w-2xl drop-shadow-md"
-            style={{ color: styles.textColor }}
+            style={{ color: styles.taglineColor || styles.textColor }}
           >
             {heroData?.tagline || "Where emotions become timeless frames"}
           </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.8 }}
-            className="flex flex-col sm:flex-row gap-4"
-          >
-            <Button variant="hero-primary" size="lg" className="min-w-[180px]">
-              View Stories
-            </Button>
-            <Button variant="hero" size="lg" className="min-w-[180px] group">
-              <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              Watch Reel
-            </Button>
-          </motion.div>
         </div>
       </motion.div>
 

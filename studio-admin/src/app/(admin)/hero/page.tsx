@@ -7,6 +7,9 @@ import { Trash2 } from "lucide-react";
 
 interface HeroStyles {
   textColor: string;
+  studioNameColor?: string;
+  locationColor?: string;
+  taglineColor?: string;
   overlayOpacity: number;
   justifyContent: "flex-start" | "flex-center" | "flex-end";
   alignItems: "flex-start" | "flex-center" | "flex-end";
