@@ -5,9 +5,30 @@ import { Button } from "@/components/ui/button";
 import { apiService, HeroData } from "@/services/api";
 import heroImage from "@/assets/hero-wedding.jpg";
 
+interface HeroStyles {
+  textColor: string;
+  overlayOpacity: number;
+  justifyContent: "flex-start" | "flex-center" | "flex-end";
+  alignItems: "flex-start" | "flex-center" | "flex-end";
+  verticalSpacing: number;
+}
+
+interface HeroFullData extends HeroData {
+  styles?: HeroStyles;
+  title?: string;
+  subtitle?: string;
+}
+
+const getFlexValue = (value: string) => {
+  if (value === "flex-start") return "flex-start";
+  if (value === "flex-center") return "center";
+  if (value === "flex-end") return "flex-end";
+  return value;
+};
+
 const HeroSection = () => {
   const ref = useRef(null);
-  const [heroData, setHeroData] = useState<HeroData | null>(null);
+  const [heroData, setHeroData] = useState<HeroFullData | null>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -28,10 +49,20 @@ const HeroSection = () => {
   const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.2]);
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.5, 0.8]);
+  
+  const baseOverlayOpacity = heroData?.styles?.overlayOpacity ?? 0.5;
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [baseOverlayOpacity, Math.min(baseOverlayOpacity + 0.3, 0.9)]);
 
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
+  };
+
+  const styles = heroData?.styles || {
+    textColor: "#ffffff",
+    overlayOpacity: 0.5,
+    justifyContent: "flex-center",
+    alignItems: "flex-center",
+    verticalSpacing: 0,
   };
 
   return (
@@ -51,67 +82,80 @@ const HeroSection = () => {
         />
       </motion.div>
 
-      {/* Cinematic Overlay with Parallax */}
+      {/* Overlay with Admin-Controlled Opacity */}
       <motion.div 
-        className="absolute inset-0 bg-gradient-to-b from-charcoal/70 via-charcoal/40 to-charcoal/80"
+        className="absolute inset-0 bg-black"
         style={{ opacity: overlayOpacity }}
       />
 
       {/* Film Grain Effect */}
       <div className="absolute inset-0 film-grain" />
 
-      {/* Content with Parallax */}
+      {/* Content with Parallax - Position controlled by admin */}
       <motion.div 
-        className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center"
-        style={{ y: contentY, opacity: contentOpacity }}
+        className="relative z-10 flex h-full px-6"
+        style={{ 
+          y: contentY, 
+          opacity: contentOpacity,
+          justifyContent: getFlexValue(styles.justifyContent),
+          alignItems: getFlexValue(styles.alignItems),
+          paddingTop: `${styles.verticalSpacing}px`,
+        }}
       >
-        {/* Location Tag */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          className="mb-6"
-        >
-          <span className="font-body text-sm tracking-widest-xl text-ivory/90 uppercase">
-            {heroData?.location || "Junagadh • Gujarat"}
-          </span>
-        </motion.div>
+        <div className="text-center flex flex-col items-center justify-center">
+          {/* Location Tag */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            className="mb-6"
+          >
+            <span 
+              className="font-body text-sm tracking-widest-xl uppercase drop-shadow-lg"
+              style={{ color: styles.textColor }}
+            >
+              {heroData?.location || "Junagadh • Gujarat"}
+            </span>
+          </motion.div>
 
-        {/* Studio Name */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 1 }}
-          className="font-display text-5xl md:text-7xl lg:text-8xl text-ivory font-semibold mb-4 drop-shadow-lg"
-        >
-          <span className="text-gold-gradient">{heroData?.studioName || "Shivay Video"}</span>
-        </motion.h1>
+          {/* Studio Name */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="font-display text-5xl md:text-7xl lg:text-8xl font-semibold mb-4 drop-shadow-lg"
+            style={{ color: styles.textColor }}
+          >
+            {heroData?.studioName || "Shivay Video"}
+          </motion.h1>
 
-        {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.8 }}
-          className="font-display text-xl md:text-2xl text-ivory/95 italic mb-12 max-w-2xl drop-shadow-md"
-        >
-          {heroData?.tagline || "Where emotions become timeless frames"}
-        </motion.p>
+          {/* Tagline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
+            className="font-display text-xl md:text-2xl italic mb-12 max-w-2xl drop-shadow-md"
+            style={{ color: styles.textColor }}
+          >
+            {heroData?.tagline || "Where emotions become timeless frames"}
+          </motion.p>
 
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.8 }}
-          className="flex flex-col sm:flex-row gap-4"
-        >
-          <Button variant="hero-primary" size="lg" className="min-w-[180px]">
-            View Stories
-          </Button>
-          <Button variant="hero" size="lg" className="min-w-[180px] group">
-            <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            Watch Reel
-          </Button>
-        </motion.div>
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.8 }}
+            className="flex flex-col sm:flex-row gap-4"
+          >
+            <Button variant="hero-primary" size="lg" className="min-w-[180px]">
+              View Stories
+            </Button>
+            <Button variant="hero" size="lg" className="min-w-[180px] group">
+              <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              Watch Reel
+            </Button>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Scroll Indicator */}

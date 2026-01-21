@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Upload new hero image
+// POST: Upload new hero image or update styles
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
@@ -41,6 +41,16 @@ export async function POST(req: NextRequest) {
     const hero = await Hero.create({
       imageUrl: body.imageUrl,
       imagePublicId: body.imagePublicId,
+      title: body.title || "Shivay Video",
+      subtitle: body.subtitle || "Where emotions become timeless frames",
+      location: body.location || "Junagadh • Gujarat",
+      styles: body.styles || {
+        textColor: "#ffffff",
+        overlayOpacity: 0.5,
+        justifyContent: "flex-center",
+        alignItems: "flex-center",
+        verticalSpacing: 0,
+      },
     });
 
     return createCorsResponse(hero, 201, req);

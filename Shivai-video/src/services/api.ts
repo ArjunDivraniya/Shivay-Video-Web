@@ -13,6 +13,15 @@ export interface HeroData {
   location?: string;
   heroImage?: string;
   imageUrl?: string;
+  title?: string;
+  subtitle?: string;
+  styles?: {
+    textColor: string;
+    overlayOpacity: number;
+    justifyContent: "flex-start" | "flex-center" | "flex-end";
+    alignItems: "flex-start" | "flex-center" | "flex-end";
+    verticalSpacing: number;
+  };
 }
 
 export interface Service {
@@ -119,6 +128,15 @@ class ApiService {
     location: data?.location || data?.city || 'Junagadh • Gujarat',
     heroImage: data?.imageUrl || data?.heroImage,
     imageUrl: data?.imageUrl,
+    title: data?.title,
+    subtitle: data?.subtitle,
+    styles: data?.styles || {
+      textColor: '#ffffff',
+      overlayOpacity: 0.5,
+      justifyContent: 'flex-center',
+      alignItems: 'flex-center',
+      verticalSpacing: 0,
+    },
   });
 
   private normalizeService = (service: any): Service => ({
