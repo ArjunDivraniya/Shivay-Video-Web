@@ -12,12 +12,17 @@ const AboutSection = () => {
   useEffect(() => {
     const fetchAbout = async () => {
       try {
+        console.log('[AboutSection] Fetching about data...');
         const data = await apiService.getAbout();
+        console.log('[AboutSection] Fetched about data:', data);
         if (data) {
           setAboutData(data);
+          console.log('[AboutSection] Set about data to state');
+        } else {
+          console.warn('[AboutSection] No about data returned from API');
         }
       } catch (error) {
-        console.error("Failed to load about data:", error);
+        console.error("[AboutSection] Failed to load about data:", error);
       }
     };
 

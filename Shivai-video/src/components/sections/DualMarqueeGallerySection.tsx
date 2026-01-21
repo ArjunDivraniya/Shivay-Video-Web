@@ -32,6 +32,15 @@ const GalleryCard = ({ image, index, width }: GalleryCardProps) => {
       
       {/* Film Grain Overlay */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><filter id=%22noise%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22 /></filter><rect width=%22100%22 height=%22100%22 filter=%22url(%23noise)%22 opacity=%220.02%22/></svg>')] pointer-events-none" />
+      
+      {/* Hover Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute bottom-4 left-4 right-4">
+          <p className="text-white text-sm md:text-base font-light tracking-widest uppercase">
+            {image.photoType === "wedding" ? "Wedding" : "Pre-Wedding"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

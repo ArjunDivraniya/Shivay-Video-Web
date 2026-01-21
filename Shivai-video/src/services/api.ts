@@ -249,15 +249,13 @@ class ApiService {
     try {
       const raw = await this.fetchData<any>('/weddings');
       const data = this.asArray(raw);
-      return data.map(this.normalizeWeddingStory);
-    } catch (primaryError) {
-      try {
-        const fallbackRaw = await this.fetchData<any>('/stories');
-        const fallback = this.asArray(fallbackRaw);
-        return fallback.map(this.normalizeWeddingStory);
-      } catch (fallbackError) {
-        return [];
-      }
+      console.log('[ApiService] Wedding stories raw data:', data);
+      const normalized = data.map(this.normalizeWeddingStory);
+      console.log('[ApiService] Wedding stories normalized:', normalized);
+      return normalized;
+    } catch (error) {
+      console.error('[ApiService] Error fetching wedding stories:', error);
+      return [];
     }
   }
 

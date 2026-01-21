@@ -79,12 +79,17 @@ const WeddingStoriesSection = () => {
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        console.log('Fetching wedding stories...');
+        console.log('[WeddingStoriesSection] Fetching wedding stories...');
         const data = await apiService.getWeddingStories();
-        console.log('Wedding stories fetched:', data);
-        setStories(data);
+        console.log('[WeddingStoriesSection] Fetched stories:', data);
+        if (data && data.length > 0) {
+          setStories(data);
+          console.log('[WeddingStoriesSection] Set stories to state:', data.length);
+        } else {
+          console.warn('[WeddingStoriesSection] No stories returned from API');
+        }
       } catch (err) {
-        console.error("Failed to fetch wedding stories:", err);
+        console.error("[WeddingStoriesSection] Failed to fetch wedding stories:", err);
       } finally {
         setIsLoading(false);
       }
