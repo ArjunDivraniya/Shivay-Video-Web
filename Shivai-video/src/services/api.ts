@@ -52,6 +52,14 @@ export interface AboutData {
   images?: string[];
 }
 
+export interface OurStoryData {
+  _id?: string;
+  imageUrl: string;
+  imagePublicId: string;
+  startedYear: number;
+  description: string;
+}
+
 export interface WeddingStory {
   _id: string;
   couple: string;
@@ -140,6 +148,14 @@ class ApiService {
     destinations: Number(about?.destinations ?? 0),
     happyCouples: Number(about?.happyCouples ?? 0),
     images: Array.isArray(about?.images) ? about.images : [],
+  });
+
+  private normalizeOurStory = (story: any): OurStoryData => ({
+    _id: story?._id,
+    imageUrl: story?.imageUrl || '',
+    imagePublicId: story?.imagePublicId || '',
+    startedYear: Number(story?.startedYear ?? new Date().getFullYear() - 8),
+    description: story?.description || '',
   });
 
   private normalizeWeddingStory = (story: any): WeddingStory => ({
@@ -241,6 +257,27 @@ class ApiService {
       const data = this.asObject(raw);
       return data ? this.normalizeAbout(data) : null;
     } catch (error) {
+      return null;
+    }
+  }
+
+  async getOurStory(): Promise<OurStoryData | null> {
+    try {
+      const raw = await this.fetchData<any>('/our-story');
+      console.log('[ApiService] Our Story raw data:', raw);
+      const data = this.asObject(raw);
+      console.log('[ApiService] Our Story after asObject:', data);
+      
+      // Check if data has actual content (not just an empty object)
+      if (data && Object.keys(data).length > 0 && data.imageUrl && data.description) {
+        const normalized = this.normalizeOurStory(data);
+        console.log('[ApiService] Our Story normalized:', normalized);
+        return normalized;
+      }
+      console.warn('[ApiService] Our Story data is empty or invalid');
+      return null;
+    } catch (error) {
+      console.error('[ApiService] Error fetching our story:', error);
       return null;
     }
   }

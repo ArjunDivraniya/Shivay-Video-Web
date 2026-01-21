@@ -1,10 +1,28 @@
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import couplePortrait from "@/assets/couple-portrait.jpg";
+import { apiService, OurStoryData } from "@/services/api";
 
 const IntroSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [ourStoryData, setOurStoryData] = useState<OurStoryData | null>(null);
+
+  useEffect(() => {
+    const fetchOurStory = async () => {
+      try {
+        console.log('[IntroSection] Fetching our story data...');
+        const data = await apiService.getOurStory();
+        console.log('[IntroSection] Fetched our story data:', data);
+        if (data) {
+          setOurStoryData(data);
+        }
+      } catch (error) {
+        console.error("[IntroSection] Failed to load our story:", error);
+      }
+    };
+    fetchOurStory();
+  }, []);
 
   return (
     <section ref={ref} className="relative py-24 md:py-32 bg-background overflow-hidden">
@@ -46,25 +64,29 @@ const IntroSection = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="font-body text-muted-foreground text-lg leading-relaxed mb-6"
+                className="font-body text-muted-foreground text-lg leading-relaxed mb-6 whitespace-pre-wrap"
               >
-                We believe every love story deserves to be told with the same magic 
-                it was lived. At Shivay Video, we don't just capture moments — we 
-                preserve emotions, freeze laughter, and immortalize the fleeting 
-                glances that speak volumes.
+                {ourStoryData?.description || (
+                  "We believe every love story deserves to be told with the same magic " +
+                  "it was lived. At Shivay Video, we don't just capture moments — we " +
+                  "preserve emotions, freeze laughter, and immortalize the fleeting " +
+                  "glances that speak volumes."
+                )}
               </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.6, duration: 0.8 }}
-                className="flex items-center gap-4"
-              >
-                <div className="h-px bg-primary w-12" />
-                <p className="font-display text-primary italic text-lg">
-                  "Emotions are our canvas, light is our brush"
-                </p>
-              </motion.div>
+              {ourStoryData?.startedYear && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ delay: 0.6, duration: 0.8 }}
+                  className="flex items-center gap-4"
+                >
+                  <div className="h-px bg-primary w-12" />
+                  <p className="font-display text-primary italic text-lg">
+                    Est. {ourStoryData.startedYear}
+                  </p>
+                </motion.div>
+              )}
             </div>
           </motion.div>
 
@@ -80,8 +102,8 @@ const IntroSection = () => {
               {/* Main Image */}
               <div className="relative overflow-hidden rounded-sm shadow-elevated">
                 <img
-                  src={couplePortrait}
-                  alt="Beautiful wedding couple portrait"
+                  src={ourStoryData?.imageUrl || couplePortrait}
+                  alt="Our Story - Shivay Video"
                   className="w-full h-[500px] md:h-[600px] object-cover"
                 />
                 {/* Gold Frame Border */}
@@ -96,7 +118,9 @@ const IntroSection = () => {
                 className="absolute -bottom-6 -left-6 w-32 h-32 border border-gold/40 rounded-full flex items-center justify-center bg-background"
               >
                 <div className="text-center">
-                  <p className="font-display text-3xl text-primary font-semibold">8+</p>
+                  <p className="font-display text-3xl text-primary font-semibold">
+                    {ourStoryData?.startedYear ? `${new Date().getFullYear() - ourStoryData.startedYear}+` : "8+"}
+                  </p>
                   <p className="font-body text-xs text-muted-foreground tracking-wide">Years</p>
                 </div>
               </motion.div>

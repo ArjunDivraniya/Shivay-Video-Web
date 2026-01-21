@@ -41,7 +41,9 @@ const AboutSection = () => {
   const frameY = useTransform(scrollYProgress, [0, 1], ["20%", "-20%"]);
   const contentY = useTransform(scrollYProgress, [0, 1], ["5%", "-5%"]);
 
+  // Use About images from database
   const heroImage = aboutData?.images?.[0] || couplePortrait;
+  const yearsInBusiness = aboutData?.experienceYears || 8;
 
   const stats = aboutData
     ? [
@@ -105,7 +107,7 @@ const AboutSection = () => {
               className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-background border-2 border-gold/40 flex items-center justify-center shadow-elevated"
             >
               <div className="text-center">
-                <p className="font-display text-2xl text-primary font-semibold">{aboutData?.experienceYears ? `${aboutData.experienceYears}+` : "8+"}</p>
+                <p className="font-display text-2xl text-primary font-semibold">{yearsInBusiness}+</p>
                 <p className="font-body text-xs text-muted-foreground">Years</p>
               </div>
             </motion.div>
@@ -130,7 +132,7 @@ const AboutSection = () => {
             <div className="space-y-4 mb-8">
               <p className="font-body text-charcoal-light leading-relaxed">
                 Founded in Junagadh, Gujarat, Shivay Video has been weaving visual 
-                stories of love and celebration for over 8 years. What started as a 
+                stories of love and celebration for over {yearsInBusiness} years. What started as a 
                 passion for capturing genuine emotions has grown into a trusted name 
                 in wedding and event photography.
               </p>
