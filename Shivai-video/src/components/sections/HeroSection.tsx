@@ -67,19 +67,27 @@ const HeroSection = () => {
 
   return (
     <section ref={ref} className="relative h-screen w-full overflow-hidden">
-      {/* Background Image with Parallax */}
+      {/* Background Image with Parallax - Use <picture> for responsive */}
       <motion.div
         className="absolute inset-0"
         style={{ y: imageY, scale: imageScale }}
       >
-        <motion.img
-          src={heroData?.heroImage || heroImage}
-          alt="Wedding photography showcasing beautiful Indian bride"
-          className="h-full w-full object-cover"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 10, ease: "easeOut" }}
-        />
+        <motion.picture>
+          {heroData?.mobileImageUrl && (
+            <source
+              media="(max-width: 768px)"
+              srcSet={heroData.mobileImageUrl}
+            />
+          )}
+          <motion.img
+            src={heroData?.heroImage || heroImage}
+            alt="Wedding photography showcasing beautiful Indian bride"
+            className="h-full w-full object-cover"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 10, ease: "easeOut" }}
+          />
+        </motion.picture>
       </motion.div>
 
       {/* Overlay with Admin-Controlled Opacity */}

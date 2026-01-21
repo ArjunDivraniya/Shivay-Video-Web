@@ -3,6 +3,8 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export interface IHero extends Document {
   imageUrl: string;
   imagePublicId: string;
+  mobileImageUrl?: string;
+  mobileImagePublicId?: string;
   title?: string;
   subtitle?: string;
   location?: string;
@@ -20,6 +22,8 @@ const HeroSchema = new Schema<IHero>(
   {
     imageUrl: { type: String, required: true },
     imagePublicId: { type: String, required: true },
+    mobileImageUrl: { type: String },
+    mobileImagePublicId: { type: String },
     title: { type: String, default: "Shivay Video" },
     subtitle: { type: String, default: "Where emotions become timeless frames" },
     location: { type: String, default: "Junagadh • Gujarat" },

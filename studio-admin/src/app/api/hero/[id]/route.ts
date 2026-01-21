@@ -25,6 +25,8 @@ export async function PUT(
       { 
         imageUrl: body.imageUrl, 
         imagePublicId: body.imagePublicId,
+        mobileImageUrl: body.mobileImageUrl,
+        mobileImagePublicId: body.mobileImagePublicId,
         title: body.title,
         subtitle: body.subtitle,
         location: body.location,
@@ -59,6 +61,8 @@ export async function PATCH(
     if (body.subtitle !== undefined) updateData.subtitle = body.subtitle;
     if (body.location !== undefined) updateData.location = body.location;
     if (body.styles) updateData.styles = body.styles;
+    if (body.mobileImageUrl !== undefined) updateData.mobileImageUrl = body.mobileImageUrl;
+    if (body.mobileImagePublicId !== undefined) updateData.mobileImagePublicId = body.mobileImagePublicId;
 
     const hero = await Hero.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -91,10 +95,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Hero not found" }, { status: 404 });
     }
 
-    // Delete from Cloudinary
-    if (hero.imagePublicId) {
+    // Delete from Cloudinary (desktop + mobile)
+    const publicIds = [hero.imagePublicId, hero.mobileImagePublicId].filter(Boolean) as string[];
+    for (const publicId of publicIds) {
       try {
-        await deleteAsset(hero.imagePublicId);
+        await deleteAsset(publicId);
       } catch (err) {
         console.error("Failed to delete hero image from Cloudinary:", err);
       }

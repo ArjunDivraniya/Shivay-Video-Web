@@ -13,6 +13,7 @@ export interface HeroData {
   location?: string;
   heroImage?: string;
   imageUrl?: string;
+  mobileImageUrl?: string | null;
   title?: string;
   subtitle?: string;
   styles?: {
@@ -128,6 +129,7 @@ class ApiService {
     location: data?.location || data?.city || 'Junagadh • Gujarat',
     heroImage: data?.imageUrl || data?.heroImage,
     imageUrl: data?.imageUrl,
+    mobileImageUrl: data?.mobileImageUrl || null,
     title: data?.title,
     subtitle: data?.subtitle,
     styles: data?.styles || {

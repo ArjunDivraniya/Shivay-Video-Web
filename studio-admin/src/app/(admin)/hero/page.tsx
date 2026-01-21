@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ImageUploader from "@/components/ImageUploader";
+import DualDeviceUploader from "@/components/DualDeviceUploader";
 import HeroEditor from "@/components/HeroEditor";
 import { Trash2 } from "lucide-react";
 
@@ -17,6 +17,8 @@ interface Hero {
   _id: string;
   imageUrl: string;
   imagePublicId: string;
+  mobileImageUrl?: string | null;
+  mobileImagePublicId?: string | null;
   title?: string;
   subtitle?: string;
   location?: string;
@@ -50,18 +52,20 @@ export default function HeroPage() {
   };
 
   const handleUploadComplete = async (data: {
-    url: string;
-    publicId: string;
-    width: number;
-    height: number;
+    desktopUrl: string | null;
+    desktopPublicId: string | null;
+    mobileUrl: string | null;
+    mobilePublicId: string | null;
   }) => {
     try {
       const res = await fetch("/api/hero", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl: data.url,
-          imagePublicId: data.publicId,
+          imageUrl: data.desktopUrl,
+          imagePublicId: data.desktopPublicId,
+          mobileImageUrl: data.mobileUrl,
+          mobileImagePublicId: data.mobilePublicId,
           title: hero?.title || "Shivay Video",
           subtitle: hero?.subtitle || "Where emotions become timeless frames",
           location: hero?.location || "Junagadh • Gujarat",
@@ -75,9 +79,9 @@ export default function HeroPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save hero image");
+      if (!res.ok) throw new Error("Failed to save hero images");
 
-      setMessage("✓ Hero image uploaded successfully!");
+      setMessage("✓ Hero images uploaded successfully!");
       setTimeout(() => setMessage(""), 3000);
       await loadHero();
     } catch (error: any) {
@@ -179,7 +183,7 @@ export default function HeroPage() {
       <div className="card p-6 space-y-4 fade-in">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
-            {hero ? "Update Hero Image" : "Upload Hero Image"}
+            {hero ? "Update Hero Images" : "Upload Hero Images"}
           </h2>
           {hero && (
             <button
@@ -192,15 +196,16 @@ export default function HeroPage() {
           )}
         </div>
 
-        <ImageUploader
-          sectionType="hero"
-          onUploadComplete={handleUploadComplete}
-          onError={(error) => {
-            setMessage(`✗ Error: ${error}`);
-            setTimeout(() => setMessage(""), 3000);
+        <DualDeviceUploader
+          desktopInitial={{
+            url: hero?.imageUrl || null,
+            publicId: hero?.imagePublicId || null,
           }}
-          label="Select Hero Image"
-          existingImageUrl={hero?.imageUrl}
+          mobileInitial={{
+            url: hero?.mobileImageUrl || null,
+            publicId: hero?.mobileImagePublicId || null,
+          }}
+          onComplete={handleUploadComplete}
         />
 
         {message && (

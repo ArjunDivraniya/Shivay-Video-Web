@@ -53,6 +53,9 @@ interface ImageUploaderProps {
   maxSizeMB?: number;
   disabled?: boolean;
   existingImageUrl?: string;
+  aspectRatioOverride?: number;
+  recommendedDimensionsOverride?: string;
+  sectionLabelOverride?: string;
 }
 
 export default function ImageUploader({
@@ -63,6 +66,9 @@ export default function ImageUploader({
   maxSizeMB = 50,
   disabled = false,
   existingImageUrl,
+  aspectRatioOverride,
+  recommendedDimensionsOverride,
+  sectionLabelOverride,
 }: ImageUploaderProps) {
   // State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -76,7 +82,9 @@ export default function ImageUploader({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const aspectRatio = ASPECT_RATIOS[sectionType];
+  const aspectRatio = aspectRatioOverride ?? ASPECT_RATIOS[sectionType];
+  const sectionLabel = sectionLabelOverride ?? SECTION_LABELS[sectionType];
+  const recommendedDimensions = recommendedDimensionsOverride ?? RECOMMENDED_DIMENSIONS[sectionType];
 
   // Handle file selection
   const handleFileSelect = useCallback(
@@ -374,11 +382,11 @@ export default function ImageUploader({
         <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 bg-gray-50 p-3 rounded-lg">
           <div>
             <p className="font-medium text-gray-700">Format</p>
-            <p>{SECTION_LABELS[sectionType]}</p>
+            <p>{sectionLabel}</p>
           </div>
           <div>
             <p className="font-medium text-gray-700">Recommended Size</p>
-            <p className="text-blue-600 font-medium">{RECOMMENDED_DIMENSIONS[sectionType]}</p>
+            <p className="text-blue-600 font-medium">{recommendedDimensions}</p>
           </div>
         </div>
       </div>
@@ -397,10 +405,10 @@ export default function ImageUploader({
                   Adjust zoom and position. The frame is locked to maintain the correct aspect ratio.
                 </p>                <div className="flex items-center gap-4 mt-2">
                   <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                    {SECTION_LABELS[sectionType]}
+                    {sectionLabel}
                   </span>
                   <span className="text-xs text-gray-600">
-                    📐 Recommended: <span className="font-semibold text-blue-600">{RECOMMENDED_DIMENSIONS[sectionType]}</span>
+                    📐 Recommended: <span className="font-semibold text-blue-600">{recommendedDimensions}</span>
                   </span>
                 </div>              </div>
               <button

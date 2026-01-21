@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
     const hero = await Hero.create({
       imageUrl: body.imageUrl,
       imagePublicId: body.imagePublicId,
+      mobileImageUrl: body.mobileImageUrl,
+      mobileImagePublicId: body.mobileImagePublicId,
       title: body.title || "Shivay Video",
       subtitle: body.subtitle || "Where emotions become timeless frames",
       location: body.location || "Junagadh • Gujarat",
